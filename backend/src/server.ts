@@ -19,6 +19,9 @@ import { rutePemasok } from './modul/pemasok/rute.js';
 import { ruteBarang } from './modul/barang/rute.js';
 import { ruteLampiran } from './modul/lampiran/rute.js';
 import { ruteAkuntansi } from './modul/akuntansi/rute.js';
+import { rutePembayaran } from './modul/pembayaran/rute.js';
+import { rutePenjualan } from './modul/penjualan/rute.js';
+import { rutePenerimaan } from './modul/penerimaan/rute.js';
 
 export async function bangunServer(): Promise<FastifyInstance> {
   const env = getEnv();
@@ -130,6 +133,9 @@ export async function bangunServer(): Promise<FastifyInstance> {
       await api.register(ruteBarang);
       await api.register(ruteLampiran);
       await api.register(ruteAkuntansi);
+      await api.register(rutePembayaran);
+      await api.register(rutePenjualan);
+      await api.register(rutePenerimaan);
     },
     { prefix: '/api/v1' },
   );
