@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
 import '../../../inti/format.dart';
@@ -34,15 +34,21 @@ class _LayarMasukState extends ConsumerState<LayarMasuk> {
       _pesanGalat = null;
     });
     try {
-      await ref.read(authRepositoriProvider).masuk(_usernameCtrl.text, _sandiCtrl.text);
+      await ref
+          .read(authRepositoriProvider)
+          .masuk(_usernameCtrl.text, _sandiCtrl.text);
     } on GalatApi catch (g) {
       String pesan = g.pesan;
       if (g.kode == 'AKUN_TERKUNCI' && g.detail['terkunci_sampai'] != null) {
-        pesan = '${g.pesan} Coba lagi setelah pukul ${formatJam(g.detail['terkunci_sampai'])}.';
+        pesan =
+            '${g.pesan} Coba lagi setelah pukul ${formatJam(g.detail['terkunci_sampai'])}.';
       }
-      if (mounted) setState(() => _pesanGalat = pesan);
+      if (mounted) {
+        setState(() => _pesanGalat = pesan);
+      }
     } catch (_) {
-      if (mounted) setState(() => _pesanGalat = 'Gagal masuk. Periksa koneksi Anda.');
+      if (mounted)
+        setState(() => _pesanGalat = 'Gagal masuk. Periksa koneksi Anda.');
     } finally {
       if (mounted) setState(() => _memuat = false);
     }
@@ -64,7 +70,8 @@ class _LayarMasukState extends ConsumerState<LayarMasuk> {
                   const SizedBox(height: TokenJarak.j1),
                   Text(
                     'Silakan masuk dengan akun apotek Anda',
-                    style: TokenTipografi.dasar.copyWith(color: TokenTeks.sekunder),
+                    style: TokenTipografi.dasar
+                        .copyWith(color: TokenTeks.sekunder),
                   ),
                   const SizedBox(height: TokenJarak.j6),
                   if (_pesanGalat != null) ...[
@@ -83,7 +90,8 @@ class _LayarMasukState extends ConsumerState<LayarMasuk> {
                     label: 'Kata sandi',
                     sembunyikan: !_tampilkanSandi,
                     akhiran: TextButton(
-                      onPressed: () => setState(() => _tampilkanSandi = !_tampilkanSandi),
+                      onPressed: () =>
+                          setState(() => _tampilkanSandi = !_tampilkanSandi),
                       child: Text(
                         _tampilkanSandi ? 'Sembunyikan' : 'Tampilkan',
                         style: TokenTipografi.keterangan.copyWith(
@@ -144,7 +152,9 @@ class _LayarGantiSandiState extends ConsumerState<LayarGantiSandi> {
       _pesanSukses = null;
     });
     try {
-      await ref.read(authRepositoriProvider).gantiSandi(_lamaCtrl.text, _baruCtrl.text);
+      await ref
+          .read(authRepositoriProvider)
+          .gantiSandi(_lamaCtrl.text, _baruCtrl.text);
       if (mounted) {
         setState(() => _pesanSukses = 'Kata sandi berhasil diperbarui.');
         if (!widget.wajib && Navigator.of(context).canPop()) {
@@ -182,7 +192,8 @@ class _LayarGantiSandiState extends ConsumerState<LayarGantiSandi> {
             if (widget.wajib) ...[
               const PesanPos(
                 jenis: JenisPesan.peringatan,
-                teks: 'Anda wajib mengganti kata sandi awal sebelum menggunakan aplikasi.',
+                teks:
+                    'Anda wajib mengganti kata sandi awal sebelum menggunakan aplikasi.',
               ),
               const SizedBox(height: TokenJarak.j4),
             ],
@@ -204,7 +215,8 @@ class _LayarGantiSandiState extends ConsumerState<LayarGantiSandi> {
               controller: _baruCtrl,
               label: 'Kata sandi baru',
               sembunyikan: true,
-              teksBantu: '8-72 karakter, minimal 1 huruf dan 1 angka, tidak sama dengan username.',
+              teksBantu:
+                  '8-72 karakter, minimal 1 huruf dan 1 angka, tidak sama dengan username.',
             ),
             const SizedBox(height: TokenJarak.j4),
             IsianTeksPos(
@@ -213,7 +225,10 @@ class _LayarGantiSandiState extends ConsumerState<LayarGantiSandi> {
               sembunyikan: true,
             ),
             const SizedBox(height: TokenJarak.j6),
-            TombolPos(label: 'Simpan Kata Sandi', memuat: _memuat, onPressed: _simpan),
+            TombolPos(
+                label: 'Simpan Kata Sandi',
+                memuat: _memuat,
+                onPressed: _simpan),
           ],
         ),
       ),

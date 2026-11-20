@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
@@ -29,8 +29,10 @@ class _LayarNearExpiredState extends ConsumerState<LayarNearExpired> {
     try {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(() => k.dio.get('/near-expired'));
-      if (mounted) setState(() => _data = res.data['data'] as Map<String, dynamic>);
-    } catch (_) {} finally {
+      if (mounted)
+        setState(() => _data = res.data['data'] as Map<String, dynamic>);
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -64,7 +66,9 @@ class _LayarNearExpiredState extends ConsumerState<LayarNearExpired> {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => LayarBuatPengajuan(
-                              alasanAwal: (item['sisa_hari'] as num) < 0 ? 'kedaluwarsa' : 'rusak',
+                              alasanAwal: (item['sisa_hari'] as num) < 0
+                                  ? 'kedaluwarsa'
+                                  : 'rusak',
                               batchIdAwal: (item['batch_id'] as num).toInt(),
                               jumlahAwal: (item['stok'] as num).toInt(),
                             ),
@@ -132,9 +136,11 @@ class _LayarDefektaState extends ConsumerState<LayarDefekta> {
         final k = ref.read(klienApiProvider);
         final res = await k.kirim(() => k.dio.get('/laporan/defekta'));
         if (mounted) {
-          setState(() => _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
+          setState(() => _daftar =
+              (res.data['data'] as List).cast<Map<String, dynamic>>());
         }
-      } catch (_) {} finally {
+      } catch (_) {
+      } finally {
         if (mounted) setState(() => _memuat = false);
       }
     });

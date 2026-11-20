@@ -20,8 +20,11 @@ ThemeData bangunTemaPos() {
       elevation: 0,
       toolbarHeight: TokenUkuran.tinggiBilahAtas,
       titleTextStyle: TokenTipografi.seksi,
-      iconTheme: IconThemeData(color: TokenTeks.utama, size: TokenUkuran.ukuranIkon),
-      shape: Border(bottom: BorderSide(color: TokenGaris.pemisah, width: TokenGarisTebal.t1)),
+      iconTheme:
+          IconThemeData(color: TokenTeks.utama, size: TokenUkuran.ukuranIkon),
+      shape: Border(
+          bottom:
+              BorderSide(color: TokenGaris.pemisah, width: TokenGarisTebal.t1)),
     ),
     dividerTheme: const DividerThemeData(
       color: TokenGaris.pemisah,

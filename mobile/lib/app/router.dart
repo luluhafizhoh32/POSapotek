@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../fitur/antrean/tampilan/layar_antrean.dart';
 import '../fitur/auth/tampilan/layar_auth.dart';
 import '../fitur/keuangan/tampilan/layar_keuangan.dart';
@@ -61,7 +61,8 @@ class CangkangUtama extends ConsumerStatefulWidget {
   ConsumerState<CangkangUtama> createState() => _CangkangUtamaState();
 }
 
-class _CangkangUtamaState extends ConsumerState<CangkangUtama> with WidgetsBindingObserver {
+class _CangkangUtamaState extends ConsumerState<CangkangUtama>
+    with WidgetsBindingObserver {
   int _indeks = 0;
   int _jumlahNotif = 0;
   Timer? _notifTimer;
@@ -79,7 +80,8 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama> with WidgetsBindi
       _segarkanNotif();
     });
 
-    _notifTimer = Timer.periodic(const Duration(seconds: 60), (_) => _segarkanNotif());
+    _notifTimer =
+        Timer.periodic(const Duration(seconds: 60), (_) => _segarkanNotif());
     _antreanTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       ref.read(antreanProvider.notifier).prosesAntrean();
     });
@@ -111,15 +113,19 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama> with WidgetsBindi
     try {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(
-        () => k.dio.get('/notifikasi', queryParameters: {'belum_dibaca': 'true'}),
+        () =>
+            k.dio.get('/notifikasi', queryParameters: {'belum_dibaca': 'true'}),
       );
       final meta = res.data['meta'] as Map<String, dynamic>;
-      if (mounted) setState(() => _jumlahNotif = (meta['total'] as num).toInt());
+      if (mounted)
+        setState(() => _jumlahNotif = (meta['total'] as num).toInt());
     } catch (_) {}
   }
 
   void _bukaNotifikasi() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LayarNotifikasi())).then(
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const LayarNotifikasi()))
+        .then(
           (_) => _segarkanNotif(),
         );
   }
@@ -166,7 +172,8 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama> with WidgetsBindi
     );
   }
 
-  List<({String label, IconData ikon, Widget layar, int badge})> _bangunTabUntukPeran(
+  List<({String label, IconData ikon, Widget layar, int badge})>
+      _bangunTabUntukPeran(
     String peran,
     int antreanCount,
   ) {
@@ -226,11 +233,31 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama> with WidgetsBindi
             ikon: LucideIcons.menu,
             layar: _LayarLainnya(
               item: [
-                ('Stok & Barang', LucideIcons.package, () => const LayarMasterBarang()),
-                ('Pemasok', LucideIcons.truck, () => const LayarMasterPemasok()),
-                ('Near-expired', LucideIcons.alertTriangle, () => const LayarNearExpired()),
-                ('Defekta', LucideIcons.trendingDown, () => const LayarDefekta()),
-                ('Antrean ($antreanCount)', LucideIcons.uploadCloud, () => const LayarAntrean()),
+                (
+                  'Stok & Barang',
+                  LucideIcons.package,
+                  () => const LayarMasterBarang()
+                ),
+                (
+                  'Pemasok',
+                  LucideIcons.truck,
+                  () => const LayarMasterPemasok()
+                ),
+                (
+                  'Near-expired',
+                  LucideIcons.alertTriangle,
+                  () => const LayarNearExpired()
+                ),
+                (
+                  'Defekta',
+                  LucideIcons.trendingDown,
+                  () => const LayarDefekta()
+                ),
+                (
+                  'Antrean ($antreanCount)',
+                  LucideIcons.uploadCloud,
+                  () => const LayarAntrean()
+                ),
                 ('Notifikasi', LucideIcons.bell, () => const LayarNotifikasi()),
                 ('Akun', LucideIcons.user, () => const LayarAkun()),
               ],
@@ -263,7 +290,11 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama> with WidgetsBindi
             ikon: LucideIcons.menu,
             layar: _LayarLainnya(
               item: [
-                ('Stok & Barang', LucideIcons.package, () => const LayarMasterBarang()),
+                (
+                  'Stok & Barang',
+                  LucideIcons.package,
+                  () => const LayarMasterBarang()
+                ),
                 ('Notifikasi', LucideIcons.bell, () => const LayarNotifikasi()),
                 ('Akun', LucideIcons.user, () => const LayarAkun()),
               ],
@@ -300,14 +331,46 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama> with WidgetsBindi
             layar: _LayarLainnya(
               item: [
                 ('Pengguna', LucideIcons.users, () => const LayarPengguna()),
-                ('Pengaturan', LucideIcons.settings, () => const LayarPengaturan()),
-                ('Barang', LucideIcons.package, () => const LayarMasterBarang()),
-                ('Pemasok', LucideIcons.truck, () => const LayarMasterPemasok()),
-                ('Saldo Awal', LucideIcons.landmark, () => const LayarSaldoAwal()),
-                ('Jurnal Manual', LucideIcons.bookOpen, () => const LayarJurnalManual()),
-                ('Tutup Periode', LucideIcons.lock, () => const LayarTutupPeriode()),
-                ('Jejak Audit', LucideIcons.shieldCheck, () => const LayarJejakAudit()),
-                ('Apotek Pantau', LucideIcons.eye, () => const LayarPantauBulanan()),
+                (
+                  'Pengaturan',
+                  LucideIcons.settings,
+                  () => const LayarPengaturan()
+                ),
+                (
+                  'Barang',
+                  LucideIcons.package,
+                  () => const LayarMasterBarang()
+                ),
+                (
+                  'Pemasok',
+                  LucideIcons.truck,
+                  () => const LayarMasterPemasok()
+                ),
+                (
+                  'Saldo Awal',
+                  LucideIcons.landmark,
+                  () => const LayarSaldoAwal()
+                ),
+                (
+                  'Jurnal Manual',
+                  LucideIcons.bookOpen,
+                  () => const LayarJurnalManual()
+                ),
+                (
+                  'Tutup Periode',
+                  LucideIcons.lock,
+                  () => const LayarTutupPeriode()
+                ),
+                (
+                  'Jejak Audit',
+                  LucideIcons.shieldCheck,
+                  () => const LayarJejakAudit()
+                ),
+                (
+                  'Apotek Pantau',
+                  LucideIcons.eye,
+                  () => const LayarPantauBulanan()
+                ),
                 ('Notifikasi', LucideIcons.bell, () => const LayarNotifikasi()),
                 ('Akun', LucideIcons.user, () => const LayarAkun()),
               ],
@@ -338,7 +401,8 @@ class _LayarLainnya extends StatelessWidget {
             leading: Icon(e.$2),
             title: Text(e.$1, style: TokenTipografi.dasar),
             trailing: const Icon(LucideIcons.chevronRight),
-            onTap: () => Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => e.$3())),
+            onTap: () => Navigator.of(ctx)
+                .push(MaterialPageRoute(builder: (_) => e.$3())),
           );
         },
       ),

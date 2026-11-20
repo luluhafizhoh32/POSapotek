@@ -1,4 +1,5 @@
-import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -17,13 +18,31 @@ class _PenyimpanMemori implements PenyimpanAman {
   @override
   Future<String?> read({required String key}) async => _data[key];
   @override
-  Future<void> write({required String key, required String value}) async => _data[key] = value;
+  Future<void> write({required String key, required String value}) async =>
+      _data[key] = value;
+}
+
+class _AdapterMock implements HttpClientAdapter {
+  final Future<ResponseBody> Function(RequestOptions options) handler;
+  _AdapterMock(this.handler);
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) =>
+      handler(options);
+
+  @override
+  void close({bool force = false}) {}
 }
 
 class _ApiAntreanPalsu implements PengirimTransaksiApi {
   int jumlahUnggah = 0;
   final List<String> urutanKirim = [];
-  Future<void> Function(String jenis, String kunci, Map<String, dynamic> payload)? onKirim;
+  Future<void> Function(
+      String jenis, String kunci, Map<String, dynamic> payload)? onKirim;
   Future<String> Function()? onUnggah;
 
   @override
@@ -66,7 +85,12 @@ void main() {
         waktu: '2026-11-19T10:15:00+07:00',
         kasir: 'Sari',
         baris: [
-          (nama: 'Paracetamol 500 mg Strip Panjang Sekali', jumlah: 2, hargaSatuan: 10000, subtotal: 20000),
+          (
+            nama: 'Paracetamol 500 mg Strip Panjang Sekali',
+            jumlah: 2,
+            hargaSatuan: 10000,
+            subtotal: 20000
+          ),
         ],
         total: 20000,
         caraBayar: 'tunai',
@@ -81,17 +105,22 @@ void main() {
     }
 
     final sementara = StrukFormatter.susunBuktiSementara(
-      baris: [(nama: 'Paracetamol', jumlah: 1, hargaSatuan: 10000, subtotal: 10000)],
+      baris: [
+        (nama: 'Paracetamol', jumlah: 1, hargaSatuan: 10000, subtotal: 10000)
+      ],
       total: 10000,
     );
     expect(sementara.any((l) => l.contains('BUKTI SEMENTARA')), true);
     expect(sementara.any((l) => l.contains('BUKAN STRUK RESMI')), true);
   });
 
-  test('PengelolaAntrean: FIFO, upload lampiran sekali, 4xx gagal tanpa ulang, 5xx maks 3x, backoff', () async {
+  test(
+      'PengelolaAntrean: FIFO, upload lampiran sekali, 4xx gagal tanpa ulang, 5xx maks 3x, backoff',
+      () async {
     final db = BasisDataLokal.memori();
     final api = _ApiAntreanPalsu();
-    final pengelola = PengelolaAntrean(db: db, api: api, getPenggunaId: () => 1);
+    final pengelola =
+        PengelolaAntrean(db: db, api: api, getPenggunaId: () => 1);
 
     expect(pengelola.hitungJedaDetik(1), 30);
     expect(pengelola.hitungJedaDetik(2), 60);
@@ -114,7 +143,8 @@ void main() {
 
     // Simulasikan k1 berhasil, k2 gagal jaringan setelah unggah lampiran berhasil
     api.onKirim = (jenis, kunci, payload) async {
-      if (kunci == 'k2' && api.urutanKirim.where((x) => x == 'k2').length == 1) {
+      if (kunci == 'k2' &&
+          api.urutanKirim.where((x) => x == 'k2').length == 1) {
         throw GalatApi.jaringan();
       }
     };
@@ -131,9 +161,11 @@ void main() {
     expect(pengelola.state, isEmpty);
 
     // 2. Uji 4xx -> langsung status gagal tanpa ulang
-    await pengelola.masukkan(jenis: 'penjualan', kunciIdempoten: 'k3', payload: {});
+    await pengelola
+        .masukkan(jenis: 'penjualan', kunciIdempoten: 'k3', payload: {});
     api.onKirim = (_, __, ___) async {
-      throw const GalatApi(kode: 'BARIS_DITOLAK', pesan: 'Stok kurang', statusHttp: 422);
+      throw const GalatApi(
+          kode: 'BARIS_DITOLAK', pesan: 'Stok kurang', statusHttp: 422);
     };
     await pengelola.prosesAntrean();
     expect(pengelola.state.first.status, 'gagal');
@@ -141,9 +173,11 @@ void main() {
 
     // 3. Uji 5xx -> ulang maks 3 kali lalu gagal GALAT_INTERNAL
     await pengelola.hapus(pengelola.state.first.id);
-    await pengelola.masukkan(jenis: 'penjualan', kunciIdempoten: 'k4', payload: {});
+    await pengelola
+        .masukkan(jenis: 'penjualan', kunciIdempoten: 'k4', payload: {});
     api.onKirim = (_, __, ___) async {
-      throw const GalatApi(kode: 'GALAT_INTERNAL', pesan: 'Server galat', statusHttp: 500);
+      throw const GalatApi(
+          kode: 'GALAT_INTERNAL', pesan: 'Server galat', statusHttp: 500);
     };
     await pengelola.prosesAntrean();
     expect(pengelola.state.first.status, 'tertunda');
@@ -176,44 +210,43 @@ void main() {
     final dio = Dio(BaseOptions(baseUrl: 'http://localhost/api/v1'));
     int jumlahRefresh = 0;
 
-    dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          if (options.path == '/auth/segarkan') {
-            jumlahRefresh++;
-            await Future<void>.delayed(const Duration(milliseconds: 30));
-            return handler.resolve(
-              Response(
-                requestOptions: options,
-                statusCode: 200,
-                data: {
-                  'data': {
-                    'token_akses': 'token-baru',
-                    'token_segar': 'segar-baru',
-                    'pengguna': sesi.state.pengguna!.keJson(),
-                  },
-                },
-              ),
-            );
-          }
-          if (options.headers['Authorization'] == 'Bearer token-lama') {
-            return handler.reject(
-              DioException(
-                requestOptions: options,
-                response: Response(
-                  requestOptions: options,
-                  statusCode: 401,
-                  data: {'galat': {'kode': 'TOKEN_TIDAK_VALID'}},
-                ),
-              ),
-            );
-          }
-          return handler.resolve(
-            Response(requestOptions: options, statusCode: 200, data: {'data': 'ok'}),
-          );
+    dio.httpClientAdapter = _AdapterMock((options) async {
+      if (options.path == '/auth/segarkan') {
+        jumlahRefresh++;
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        return ResponseBody.fromString(
+          jsonEncode({
+            'data': {
+              'token_akses': 'token-baru',
+              'token_segar': 'segar-baru',
+              'pengguna': sesi.saatIni.pengguna!.keJson(),
+            },
+          }),
+          200,
+          headers: {
+            Headers.contentTypeHeader: ['application/json']
+          },
+        );
+      }
+      if (options.headers['Authorization'] == 'Bearer token-lama') {
+        return ResponseBody.fromString(
+          jsonEncode({
+            'galat': {'kode': 'TOKEN_TIDAK_VALID'}
+          }),
+          401,
+          headers: {
+            Headers.contentTypeHeader: ['application/json']
+          },
+        );
+      }
+      return ResponseBody.fromString(
+        jsonEncode({'data': 'ok'}),
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json']
         },
-      ),
-    );
+      );
+    });
 
     final klien = KlienApi(sesi: sesi, dioOverride: dio);
     final results = await Future.wait([
@@ -224,6 +257,6 @@ void main() {
 
     expect(results.length, 3);
     expect(jumlahRefresh, 1);
-    expect(sesi.state.tokenAkses, 'token-baru');
+    expect(sesi.saatIni.tokenAkses, 'token-baru');
   });
 }

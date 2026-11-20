@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
@@ -18,7 +18,8 @@ class LayarAntrean extends ConsumerWidget {
         actions: [
           if (daftar.any((e) => e.status == 'tertunda'))
             TextButton(
-              onPressed: () => ref.read(antreanProvider.notifier).prosesAntrean(),
+              onPressed: () =>
+                  ref.read(antreanProvider.notifier).prosesAntrean(),
               child: const Text('Kirim Sekarang'),
             ),
         ],
@@ -27,13 +28,15 @@ class LayarAntrean extends ConsumerWidget {
           ? const Center(
               child: Padding(
                 padding: EdgeInsets.all(TokenJarak.j4),
-                child: Text('Tidak ada transaksi tertunda.', style: TokenTipografi.dasar),
+                child: Text('Tidak ada transaksi tertunda.',
+                    style: TokenTipografi.dasar),
               ),
             )
           : ListView.separated(
               padding: const EdgeInsets.all(TokenJarak.j4),
               itemCount: daftar.length,
-              separatorBuilder: (_, __) => const SizedBox(height: TokenJarak.j3),
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: TokenJarak.j3),
               itemBuilder: (ctx, i) {
                 final item = daftar[i];
                 final judulJenis = switch (item.jenis) {
@@ -58,7 +61,8 @@ class LayarAntrean extends ConsumerWidget {
                           Expanded(
                             child: Text(
                               judulJenis,
-                              style: TokenTipografi.dasar.copyWith(fontWeight: FontWeight.w600),
+                              style: TokenTipografi.dasar
+                                  .copyWith(fontWeight: FontWeight.w600),
                             ),
                           ),
                           LencanaStatusPos(status: item.status),
@@ -69,17 +73,20 @@ class LayarAntrean extends ConsumerWidget {
                         formatTanggalJam(item.dibuatPada),
                         style: TokenTipografi.keterangan,
                       ),
-                      if (item.status == 'gagal' && item.pesanGalat != null) ...[
+                      if (item.status == 'gagal' &&
+                          item.pesanGalat != null) ...[
                         const SizedBox(height: TokenJarak.j2),
-                        PesanPos(jenis: JenisPesan.bahaya, teks: item.pesanGalat!),
+                        PesanPos(
+                            jenis: JenisPesan.bahaya, teks: item.pesanGalat!),
                         const SizedBox(height: TokenJarak.j2),
                         Row(
                           children: [
                             Expanded(
                               child: TombolPos(
                                 label: 'Coba Lagi',
-                                onPressed: () =>
-                                    ref.read(antreanProvider.notifier).cobaLagiItem(item.id),
+                                onPressed: () => ref
+                                    .read(antreanProvider.notifier)
+                                    .cobaLagiItem(item.id),
                               ),
                             ),
                             const SizedBox(width: TokenJarak.j2),
@@ -100,18 +107,22 @@ class LayarAntrean extends ConsumerWidget {
                                         label: 'Batal',
                                         jenis: JenisTombol.sekunder,
                                         penuh: false,
-                                        onPressed: () => Navigator.pop(ctx, false),
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
                                       ),
                                       TombolPos(
                                         label: 'Hapus',
                                         jenis: JenisTombol.bahaya,
                                         penuh: false,
-                                        onPressed: () => Navigator.pop(ctx, true),
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
                                       ),
                                     ],
                                   );
                                   if (yakin == true) {
-                                    await ref.read(antreanProvider.notifier).hapus(item.id);
+                                    await ref
+                                        .read(antreanProvider.notifier)
+                                        .hapus(item.id);
                                   }
                                 },
                               ),

@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
@@ -16,7 +16,8 @@ class LayarDaftarPengajuan extends ConsumerStatefulWidget {
   const LayarDaftarPengajuan({super.key});
 
   @override
-  ConsumerState<LayarDaftarPengajuan> createState() => _LayarDaftarPengajuanState();
+  ConsumerState<LayarDaftarPengajuan> createState() =>
+      _LayarDaftarPengajuanState();
 }
 
 class _LayarDaftarPengajuanState extends ConsumerState<LayarDaftarPengajuan> {
@@ -35,9 +36,11 @@ class _LayarDaftarPengajuanState extends ConsumerState<LayarDaftarPengajuan> {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(() => k.dio.get('/pengajuan-pengurangan'));
       if (mounted) {
-        setState(() => _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
+        setState(() =>
+            _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
       }
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -48,7 +51,9 @@ class _LayarDaftarPengajuanState extends ConsumerState<LayarDaftarPengajuan> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(peran == 'apa' ? 'Pengesahan Pengurangan' : 'Pengajuan Pengurangan'),
+        title: Text(peran == 'apa'
+            ? 'Pengesahan Pengurangan'
+            : 'Pengajuan Pengurangan'),
         actions: [
           if (peran == 'staf_gudang')
             IconButton(
@@ -80,12 +85,13 @@ class _LayarDaftarPengajuanState extends ConsumerState<LayarDaftarPengajuan> {
                         subtitle: Text(
                           '${p['jumlah_baris']} batch · ${formatRupiah((p['nilai_total'] as num).toInt())}',
                         ),
-                        trailing: LencanaStatusPos(status: p['status'] as String),
+                        trailing:
+                            LencanaStatusPos(status: p['status'] as String),
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  LayarDetailPengajuan(pengajuanId: (p['id'] as num).toInt()),
+                              builder: (_) => LayarDetailPengajuan(
+                                  pengajuanId: (p['id'] as num).toInt()),
                             ),
                           );
                           _muat();
@@ -103,7 +109,8 @@ class LayarBuatPengajuan extends ConsumerStatefulWidget {
   final int? batchIdAwal;
   final int? jumlahAwal;
 
-  const LayarBuatPengajuan({super.key, this.alasanAwal, this.batchIdAwal, this.jumlahAwal});
+  const LayarBuatPengajuan(
+      {super.key, this.alasanAwal, this.batchIdAwal, this.jumlahAwal});
 
   @override
   ConsumerState<LayarBuatPengajuan> createState() => _LayarBuatPengajuanState();
@@ -117,7 +124,7 @@ class _LayarBuatPengajuanState extends ConsumerState<LayarBuatPengajuan> {
   int? _pemasokId;
   List<Map<String, dynamic>> _pemasok = [];
   String? _fotoPath;
-  String _kunciIdempoten = const Uuid().v4();
+  final String _kunciIdempoten = const Uuid().v4();
   bool _memuat = false;
   String? _pesanGalat;
 
@@ -130,9 +137,11 @@ class _LayarBuatPengajuanState extends ConsumerState<LayarBuatPengajuan> {
     Future.microtask(() async {
       try {
         final k = ref.read(klienApiProvider);
-        final res = await k.kirim(() => k.dio.get('/pemasok', queryParameters: {'per_halaman': 100}));
+        final res = await k.kirim(
+            () => k.dio.get('/pemasok', queryParameters: {'per_halaman': 100}));
         if (mounted) {
-          setState(() => _pemasok = (res.data['data'] as List).cast<Map<String, dynamic>>());
+          setState(() => _pemasok =
+              (res.data['data'] as List).cast<Map<String, dynamic>>());
         }
       } catch (_) {}
     });
@@ -166,7 +175,8 @@ class _LayarBuatPengajuanState extends ConsumerState<LayarBuatPengajuan> {
         {
           'batch_id': batchId,
           'jumlah': jumlah,
-          if (_ketCtrl.text.trim().isNotEmpty) 'keterangan': _ketCtrl.text.trim(),
+          if (_ketCtrl.text.trim().isNotEmpty)
+            'keterangan': _ketCtrl.text.trim(),
         },
       ],
     };
@@ -179,7 +189,8 @@ class _LayarBuatPengajuanState extends ConsumerState<LayarBuatPengajuan> {
           'berkas': await MultipartFile.fromFile(_fotoPath!),
         });
         final up = await k.kirim(() => k.dio.post('/lampiran', data: form));
-        payload['lampiran_id'] = (up.data['data'] as Map<String, dynamic>)['id'] as String;
+        payload['lampiran_id'] =
+            (up.data['data'] as Map<String, dynamic>)['id'] as String;
       }
 
       await k.kirim(
@@ -232,7 +243,7 @@ class _LayarBuatPengajuanState extends ConsumerState<LayarBuatPengajuan> {
           if (_alasan == 'retur_pbf') ...[
             const SizedBox(height: TokenJarak.j3),
             DropdownButtonFormField<int>(
-              value: _pemasokId,
+              initialValue: _pemasokId,
               decoration: const InputDecoration(labelText: 'Pemasok'),
               items: _pemasok
                   .map((p) => DropdownMenuItem<int>(
@@ -244,9 +255,15 @@ class _LayarBuatPengajuanState extends ConsumerState<LayarBuatPengajuan> {
             ),
           ],
           const SizedBox(height: TokenJarak.j3),
-          IsianTeksPos(controller: _batchCtrl, label: 'ID Batch', keyboardType: TextInputType.number),
+          IsianTeksPos(
+              controller: _batchCtrl,
+              label: 'ID Batch',
+              keyboardType: TextInputType.number),
           const SizedBox(height: TokenJarak.j3),
-          IsianTeksPos(controller: _jumlahCtrl, label: 'Jumlah', keyboardType: TextInputType.number),
+          IsianTeksPos(
+              controller: _jumlahCtrl,
+              label: 'Jumlah',
+              keyboardType: TextInputType.number),
           const SizedBox(height: TokenJarak.j3),
           IsianTeksPos(controller: _ketCtrl, label: 'Keterangan (Opsional)'),
           const SizedBox(height: TokenJarak.j4),
@@ -277,7 +294,8 @@ class LayarDetailPengajuan extends ConsumerStatefulWidget {
   const LayarDetailPengajuan({super.key, required this.pengajuanId});
 
   @override
-  ConsumerState<LayarDetailPengajuan> createState() => _LayarDetailPengajuanState();
+  ConsumerState<LayarDetailPengajuan> createState() =>
+      _LayarDetailPengajuanState();
 }
 
 class _LayarDetailPengajuanState extends ConsumerState<LayarDetailPengajuan> {
@@ -295,9 +313,12 @@ class _LayarDetailPengajuanState extends ConsumerState<LayarDetailPengajuan> {
     setState(() => _memuat = true);
     try {
       final k = ref.read(klienApiProvider);
-      final res = await k.kirim(() => k.dio.get('/pengajuan-pengurangan/${widget.pengajuanId}'));
-      if (mounted) setState(() => _data = res.data['data'] as Map<String, dynamic>);
-    } catch (_) {} finally {
+      final res = await k.kirim(
+          () => k.dio.get('/pengajuan-pengurangan/${widget.pengajuanId}'));
+      if (mounted)
+        setState(() => _data = res.data['data'] as Map<String, dynamic>);
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -366,7 +387,9 @@ class _LayarDetailPengajuanState extends ConsumerState<LayarDetailPengajuan> {
                 ],
                 Row(
                   children: [
-                    Expanded(child: Text(_data!['nomor'] as String, style: TokenTipografi.judul)),
+                    Expanded(
+                        child: Text(_data!['nomor'] as String,
+                            style: TokenTipografi.judul)),
                     LencanaStatusPos(status: _data!['status'] as String),
                   ],
                 ),
@@ -391,12 +414,14 @@ class _LayarDetailPengajuanState extends ConsumerState<LayarDetailPengajuan> {
                 }),
                 if (peran == 'apa' && _data!['status'] == 'menunggu') ...[
                   const SizedBox(height: TokenJarak.j6),
-                  TombolPos(label: 'Setujui', onPressed: () => _putuskan('setuju')),
+                  TombolPos(
+                      label: 'Setujui', onPressed: () => _putuskan('setuju')),
                   const SizedBox(height: TokenJarak.j2),
                   TombolPos(
                     label: 'Kembalikan',
                     jenis: JenisTombol.sekunder,
-                    onPressed: () => _dialogAlasan('kembalikan', 'Kembalikan Pengajuan'),
+                    onPressed: () =>
+                        _dialogAlasan('kembalikan', 'Kembalikan Pengajuan'),
                   ),
                   const SizedBox(height: TokenJarak.j2),
                   TombolPos(

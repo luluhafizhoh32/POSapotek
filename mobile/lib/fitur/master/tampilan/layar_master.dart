@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
 import '../../../inti/format.dart';
@@ -31,10 +31,14 @@ class _LayarMasterBarangState extends ConsumerState<LayarMasterBarang> {
     try {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(
-        () => k.dio.get('/barang', queryParameters: {if (_q.isNotEmpty) 'q': _q, 'per_halaman': 100}),
+        () => k.dio.get('/barang',
+            queryParameters: {if (_q.isNotEmpty) 'q': _q, 'per_halaman': 100}),
       );
-      if (mounted) setState(() => _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
-    } catch (_) {} finally {
+      if (mounted)
+        setState(() =>
+            _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -58,7 +62,8 @@ class _LayarMasterBarangState extends ConsumerState<LayarMasterBarang> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (errMsg != null) PesanPos(jenis: JenisPesan.bahaya, teks: errMsg!),
+                if (errMsg != null)
+                  PesanPos(jenis: JenisPesan.bahaya, teks: errMsg!),
                 IsianTeksPos(controller: kodeCtrl, label: 'Kode'),
                 const SizedBox(height: TokenJarak.j2),
                 IsianTeksPos(controller: namaCtrl, label: 'Nama Barang'),
@@ -68,7 +73,7 @@ class _LayarMasterBarangState extends ConsumerState<LayarMasterBarang> {
                 IsianRupiahPos(controller: hargaCtrl, label: 'Harga Jual'),
                 const SizedBox(height: TokenJarak.j2),
                 DropdownButtonFormField<String>(
-                  value: kategori,
+                  initialValue: kategori,
                   decoration: const InputDecoration(labelText: 'Kategori'),
                   items: const [
                     DropdownMenuItem(value: 'generik', child: Text('Generik')),
@@ -78,15 +83,19 @@ class _LayarMasterBarangState extends ConsumerState<LayarMasterBarang> {
                 ),
                 const SizedBox(height: TokenJarak.j2),
                 DropdownButtonFormField<String>(
-                  value: golongan,
+                  initialValue: golongan,
                   decoration: const InputDecoration(labelText: 'Golongan'),
                   items: const [
                     DropdownMenuItem(value: 'bebas', child: Text('Bebas')),
-                    DropdownMenuItem(value: 'bebas_terbatas', child: Text('Bebas Terbatas')),
+                    DropdownMenuItem(
+                        value: 'bebas_terbatas', child: Text('Bebas Terbatas')),
                     DropdownMenuItem(value: 'keras', child: Text('Keras')),
-                    DropdownMenuItem(value: 'narkotika', child: Text('Narkotika')),
-                    DropdownMenuItem(value: 'psikotropika', child: Text('Psikotropika')),
-                    DropdownMenuItem(value: 'prekursor', child: Text('Prekursor')),
+                    DropdownMenuItem(
+                        value: 'narkotika', child: Text('Narkotika')),
+                    DropdownMenuItem(
+                        value: 'psikotropika', child: Text('Psikotropika')),
+                    DropdownMenuItem(
+                        value: 'prekursor', child: Text('Prekursor')),
                   ],
                   onChanged: (v) => golongan = v ?? 'bebas',
                 ),
@@ -139,7 +148,8 @@ class _LayarMasterBarangState extends ConsumerState<LayarMasterBarang> {
         title: const Text('Stok & Barang'),
         actions: [
           if (bolehEdit)
-            IconButton(icon: const Icon(LucideIcons.plus), onPressed: _tambahBarang),
+            IconButton(
+                icon: const Icon(LucideIcons.plus), onPressed: _tambahBarang),
         ],
       ),
       body: Column(
@@ -159,7 +169,8 @@ class _LayarMasterBarangState extends ConsumerState<LayarMasterBarang> {
             child: _memuat
                 ? const Center(child: CircularProgressIndicator())
                 : ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: TokenJarak.j4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: TokenJarak.j4),
                     itemCount: _daftar.length,
                     separatorBuilder: (_, __) => const Divider(),
                     itemBuilder: (ctx, i) {
@@ -167,10 +178,12 @@ class _LayarMasterBarangState extends ConsumerState<LayarMasterBarang> {
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(b['nama'] as String),
-                        subtitle: Text('${b['kode']} · ${b['satuan']} · Stok ${b['stok_total']}'),
+                        subtitle: Text(
+                            '${b['kode']} · ${b['satuan']} · Stok ${b['stok_total']}'),
                         trailing: Text(
                           formatRupiah((b['harga_jual'] as num).toInt()),
-                          style: TokenTipografi.angkaTabular(TokenTipografi.dasar),
+                          style:
+                              TokenTipografi.angkaTabular(TokenTipografi.dasar),
                         ),
                       );
                     },
@@ -203,9 +216,13 @@ class _LayarMasterPemasokState extends ConsumerState<LayarMasterPemasok> {
     setState(() => _memuat = true);
     try {
       final k = ref.read(klienApiProvider);
-      final res = await k.kirim(() => k.dio.get('/pemasok', queryParameters: {'per_halaman': 100}));
-      if (mounted) setState(() => _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
-    } catch (_) {} finally {
+      final res = await k.kirim(
+          () => k.dio.get('/pemasok', queryParameters: {'per_halaman': 100}));
+      if (mounted)
+        setState(() =>
+            _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -242,7 +259,8 @@ class _LayarMasterPemasokState extends ConsumerState<LayarMasterPemasok> {
             await k.kirim(() => k.dio.post('/pemasok', data: {
                   'kode': kodeCtrl.text.trim(),
                   'nama': namaCtrl.text.trim(),
-                  if (telpCtrl.text.trim().isNotEmpty) 'telepon': telpCtrl.text.trim(),
+                  if (telpCtrl.text.trim().isNotEmpty)
+                    'telepon': telpCtrl.text.trim(),
                 }));
             if (mounted) Navigator.pop(context);
             await _muat();
@@ -262,7 +280,8 @@ class _LayarMasterPemasokState extends ConsumerState<LayarMasterPemasok> {
         title: const Text('Pemasok'),
         actions: [
           if (bolehEdit)
-            IconButton(icon: const Icon(LucideIcons.plus), onPressed: _tambahPemasok),
+            IconButton(
+                icon: const Icon(LucideIcons.plus), onPressed: _tambahPemasok),
         ],
       ),
       body: _memuat
@@ -276,7 +295,8 @@ class _LayarMasterPemasokState extends ConsumerState<LayarMasterPemasok> {
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(p['nama'] as String),
-                  subtitle: Text('${p['kode']}${p['telepon'] != null ? ' · ${p['telepon']}' : ''}'),
+                  subtitle: Text(
+                      '${p['kode']}${p['telepon'] != null ? ' · ${p['telepon']}' : ''}'),
                 );
               },
             ),

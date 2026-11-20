@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -14,10 +14,12 @@ class LayarBerandaPemilik extends ConsumerStatefulWidget {
   final VoidCallback? onBukaNotifikasi;
   final int jumlahNotifikasi;
 
-  const LayarBerandaPemilik({super.key, this.onBukaNotifikasi, this.jumlahNotifikasi = 0});
+  const LayarBerandaPemilik(
+      {super.key, this.onBukaNotifikasi, this.jumlahNotifikasi = 0});
 
   @override
-  ConsumerState<LayarBerandaPemilik> createState() => _LayarBerandaPemilikState();
+  ConsumerState<LayarBerandaPemilik> createState() =>
+      _LayarBerandaPemilikState();
 }
 
 class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
@@ -35,8 +37,10 @@ class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
     try {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(() => k.dio.get('/ringkasan'));
-      if (mounted) setState(() => _data = res.data['data'] as Map<String, dynamic>);
-    } catch (_) {} finally {
+      if (mounted)
+        setState(() => _data = res.data['data'] as Map<String, dynamic>);
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -84,13 +88,19 @@ class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
             : ListView(
                 padding: const EdgeInsets.all(TokenJarak.j4),
                 children: [
-                  _kartu('Omzet Hari Ini', formatRupiah((_data!['omzet_hari_ini'] as num).toInt())),
+                  _kartu(
+                      'Omzet Hari Ini',
+                      formatRupiah(
+                          ((_data!['omzet_hari_ini'] ?? 0) as num).toInt())),
                   const SizedBox(height: TokenJarak.j3),
-                  _kartu('Transaksi Hari Ini', '${_data!['jumlah_transaksi_hari_ini'] ?? 0}'),
+                  _kartu('Transaksi Hari Ini',
+                      '${_data!['jumlah_transaksi_hari_ini'] ?? 0}'),
                   const SizedBox(height: TokenJarak.j3),
-                  _kartu('Pengajuan Menunggu', '${_data!['pengajuan_menunggu'] ?? 0}'),
+                  _kartu('Pengajuan Menunggu',
+                      '${_data!['pengajuan_menunggu'] ?? 0}'),
                   const SizedBox(height: TokenJarak.j3),
-                  _kartu('Batch Near-Expired', '${_data!['near_expired_batch'] ?? 0}'),
+                  _kartu('Batch Near-Expired',
+                      '${_data!['near_expired_batch'] ?? 0}'),
                   const SizedBox(height: TokenJarak.j3),
                   _kartu('Barang Defekta', '${_data!['defekta_barang'] ?? 0}'),
                 ],
@@ -104,17 +114,20 @@ class LayarLaporanOperasional extends ConsumerStatefulWidget {
   const LayarLaporanOperasional({super.key});
 
   @override
-  ConsumerState<LayarLaporanOperasional> createState() => _LayarLaporanOperasionalState();
+  ConsumerState<LayarLaporanOperasional> createState() =>
+      _LayarLaporanOperasionalState();
 }
 
-class _LayarLaporanOperasionalState extends ConsumerState<LayarLaporanOperasional> {
+class _LayarLaporanOperasionalState
+    extends ConsumerState<LayarLaporanOperasional> {
   String _tab = 'omzet';
   Map<String, dynamic>? _omzet;
   List<Map<String, dynamic>> _margin = [];
   Map<String, dynamic>? _fastSlow;
   Map<String, dynamic>? _golKhusus;
   final _periodeCtrl = TextEditingController(
-    text: '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}',
+    text:
+        '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}',
   );
   bool _memuat = false;
 
@@ -147,12 +160,16 @@ class _LayarLaporanOperasionalState extends ConsumerState<LayarLaporanOperasiona
         final r = await k.kirim(
           () => k.dio.get(
             '/laporan/golongan-khusus',
-            queryParameters: {'periode': _periodeCtrl.text.trim(), 'format': 'json'},
+            queryParameters: {
+              'periode': _periodeCtrl.text.trim(),
+              'format': 'json'
+            },
           ),
         );
         _golKhusus = r.data['data'] as Map<String, dynamic>;
       }
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -169,7 +186,8 @@ class _LayarLaporanOperasionalState extends ConsumerState<LayarLaporanOperasiona
     final dir = await getTemporaryDirectory();
     final file = File(p.join(dir.path, 'golongan-khusus-$periode.csv'));
     await file.writeAsString(res.data.toString());
-    await Share.shareXFiles([XFile(file.path)], text: 'Mutasi Golongan Khusus $periode');
+    await Share.shareXFiles([XFile(file.path)],
+        text: 'Mutasi Golongan Khusus $periode');
   }
 
   @override
@@ -212,7 +230,12 @@ class _LayarLaporanOperasionalState extends ConsumerState<LayarLaporanOperasiona
                     children: [
                       if (_tab == 'omzet' && _omzet != null) ...[
                         TabelBarisPos(
-                          kepala: const ['Periode', 'Trx', 'Omzet', 'Laba Kotor'],
+                          kepala: const [
+                            'Periode',
+                            'Trx',
+                            'Omzet',
+                            'Laba Kotor'
+                          ],
                           rataKanan: const [false, true, true, true],
                           baris: (_omzet!['baris'] as List).map((raw) {
                             final b = raw as Map<String, dynamic>;
@@ -226,12 +249,18 @@ class _LayarLaporanOperasionalState extends ConsumerState<LayarLaporanOperasiona
                         ),
                       ] else if (_tab == 'margin') ...[
                         TabelBarisPos(
-                          kepala: const ['Kategori', 'Penjualan', 'HPP', 'Margin'],
+                          kepala: const [
+                            'Kategori',
+                            'Penjualan',
+                            'HPP',
+                            'Margin'
+                          ],
                           rataKanan: const [false, true, true, true],
                           baris: _margin
                               .map((m) => [
                                     m['kategori'] as String,
-                                    formatRupiah((m['penjualan'] as num).toInt()),
+                                    formatRupiah(
+                                        (m['penjualan'] as num).toInt()),
                                     formatRupiah((m['hpp'] as num).toInt()),
                                     '${m['persen_margin']}%',
                                   ])
@@ -245,7 +274,11 @@ class _LayarLaporanOperasionalState extends ConsumerState<LayarLaporanOperasiona
                           rataKanan: const [false, true, true],
                           baris: (_fastSlow!['fast'] as List).map((raw) {
                             final b = raw as Map<String, dynamic>;
-                            return [b['nama'] as String, '${b['jumlah_terjual']}', '${b['stok_total']}'];
+                            return [
+                              b['nama'] as String,
+                              '${b['jumlah_terjual']}',
+                              '${b['stok_total']}'
+                            ];
                           }).toList(),
                         ),
                         const SizedBox(height: TokenJarak.j4),
@@ -256,17 +289,24 @@ class _LayarLaporanOperasionalState extends ConsumerState<LayarLaporanOperasiona
                           rataKanan: const [false, true, true],
                           baris: (_fastSlow!['slow'] as List).map((raw) {
                             final b = raw as Map<String, dynamic>;
-                            return [b['nama'] as String, '${b['jumlah_terjual']}', '${b['stok_total']}'];
+                            return [
+                              b['nama'] as String,
+                              '${b['jumlah_terjual']}',
+                              '${b['stok_total']}'
+                            ];
                           }).toList(),
                         ),
                       ] else if (_tab == 'golongan') ...[
                         Row(
                           children: [
                             Expanded(
-                              child: IsianTeksPos(controller: _periodeCtrl, label: 'Periode (YYYY-MM)'),
+                              child: IsianTeksPos(
+                                  controller: _periodeCtrl,
+                                  label: 'Periode (YYYY-MM)'),
                             ),
                             const SizedBox(width: TokenJarak.j2),
-                            TombolPos(label: 'Muat', penuh: false, onPressed: _muat),
+                            TombolPos(
+                                label: 'Muat', penuh: false, onPressed: _muat),
                           ],
                         ),
                         const SizedBox(height: TokenJarak.j3),
@@ -279,12 +319,19 @@ class _LayarLaporanOperasionalState extends ConsumerState<LayarLaporanOperasiona
                         const SizedBox(height: TokenJarak.j3),
                         if (_golKhusus != null)
                           TabelBarisPos(
-                            kepala: const ['Barang', 'Awal', 'Masuk', 'Keluar', 'Akhir'],
+                            kepala: const [
+                              'Barang',
+                              'Awal',
+                              'Masuk',
+                              'Keluar',
+                              'Akhir'
+                            ],
                             rataKanan: const [false, true, true, true, true],
                             baris: (_golKhusus!['baris'] as List).map((raw) {
                               final b = raw as Map<String, dynamic>;
-                              final keluar = (b['keluar_penjualan'] as num).toInt() +
-                                  (b['keluar_pengurangan'] as num).toInt();
+                              final keluar =
+                                  (b['keluar_penjualan'] as num).toInt() +
+                                      (b['keluar_pengurangan'] as num).toInt();
                               return [
                                 b['nama'] as String,
                                 '${b['stok_awal']}',
@@ -341,10 +388,12 @@ class _LayarPantauBulananState extends ConsumerState<LayarPantauBulanan> {
     if (_apotekId == null) return;
     final k = ref.read(klienApiProvider);
     final res = await k.kirim(
-      () => k.dio.get('/laporan-bulanan', queryParameters: {'apotek_id': _apotekId}),
+      () => k.dio
+          .get('/laporan-bulanan', queryParameters: {'apotek_id': _apotekId}),
     );
     if (mounted) {
-      setState(() => _laporanList = (res.data['data'] as List).cast<Map<String, dynamic>>());
+      setState(() => _laporanList =
+          (res.data['data'] as List).cast<Map<String, dynamic>>());
     }
   }
 
@@ -357,7 +406,7 @@ class _LayarPantauBulananState extends ConsumerState<LayarPantauBulanan> {
         children: [
           if (_apotekList.isNotEmpty)
             DropdownButtonFormField<int>(
-              value: _apotekId,
+              initialValue: _apotekId,
               decoration: const InputDecoration(labelText: 'Pilih Apotek'),
               items: _apotekList
                   .map((a) => DropdownMenuItem<int>(

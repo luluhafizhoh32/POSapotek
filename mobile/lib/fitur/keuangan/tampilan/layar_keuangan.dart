@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
@@ -16,7 +16,8 @@ class LayarKeuangan extends ConsumerStatefulWidget {
 class _LayarKeuanganState extends ConsumerState<LayarKeuangan> {
   String _tab = 'neraca-saldo';
   final _periodeCtrl = TextEditingController(
-    text: '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}',
+    text:
+        '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}',
   );
   Map<String, dynamic>? _data;
   bool _memuat = false;
@@ -43,8 +44,10 @@ class _LayarKeuanganState extends ConsumerState<LayarKeuangan> {
           queryParameters: {'periode': _periodeCtrl.text.trim()},
         ),
       );
-      if (mounted) setState(() => _data = res.data['data'] as Map<String, dynamic>);
-    } catch (_) {} finally {
+      if (mounted)
+        setState(() => _data = res.data['data'] as Map<String, dynamic>);
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -59,7 +62,9 @@ class _LayarKeuanganState extends ConsumerState<LayarKeuangan> {
             padding: const EdgeInsets.all(TokenJarak.j3),
             child: Row(
               children: [
-                Expanded(child: IsianTeksPos(controller: _periodeCtrl, label: 'Periode (YYYY-MM)')),
+                Expanded(
+                    child: IsianTeksPos(
+                        controller: _periodeCtrl, label: 'Periode (YYYY-MM)')),
                 const SizedBox(width: TokenJarak.j2),
                 TombolPos(label: 'Muat', penuh: false, onPressed: _muat),
               ],
@@ -73,10 +78,12 @@ class _LayarKeuanganState extends ConsumerState<LayarKeuangan> {
             ].map((e) {
               return Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: TokenJarak.j1),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: TokenJarak.j1),
                   child: TombolPos(
                     label: e.$2,
-                    jenis: _tab == e.$1 ? JenisTombol.utama : JenisTombol.sekunder,
+                    jenis:
+                        _tab == e.$1 ? JenisTombol.utama : JenisTombol.sekunder,
                     onPressed: () {
                       setState(() => _tab = e.$1);
                       _muat();
@@ -108,7 +115,8 @@ class _LayarKeuanganState extends ConsumerState<LayarKeuangan> {
                       ] else if (_tab == 'laba-rugi') ...[
                         Text(
                           'Laba Bersih: ${formatRupiah((_data!['laba_bersih'] as num).toInt())}',
-                          style: TokenTipografi.angkaTabular(TokenTipografi.judul),
+                          style:
+                              TokenTipografi.angkaTabular(TokenTipografi.judul),
                         ),
                         const SizedBox(height: TokenJarak.j3),
                         TabelBarisPos(
@@ -117,22 +125,30 @@ class _LayarKeuanganState extends ConsumerState<LayarKeuangan> {
                           baris: [
                             ...(_data!['pendapatan'] as List).map((raw) {
                               final r = raw as Map<String, dynamic>;
-                              return [r['akun_nama'] as String, formatRupiah((r['jumlah'] as num).toInt())];
+                              return [
+                                r['akun_nama'] as String,
+                                formatRupiah((r['jumlah'] as num).toInt())
+                              ];
                             }),
                             ...(_data!['beban'] as List).map((raw) {
                               final r = raw as Map<String, dynamic>;
-                              return [r['akun_nama'] as String, formatRupiah((r['jumlah'] as num).toInt())];
+                              return [
+                                r['akun_nama'] as String,
+                                formatRupiah((r['jumlah'] as num).toInt())
+                              ];
                             }),
                           ],
                         ),
                       ] else ...[
                         Text(
                           'Total Aset: ${formatRupiah((_data!['total_aset'] as num).toInt())}',
-                          style: TokenTipografi.angkaTabular(TokenTipografi.seksi),
+                          style:
+                              TokenTipografi.angkaTabular(TokenTipografi.seksi),
                         ),
                         Text(
                           'Kewajiban + Ekuitas: ${formatRupiah((_data!['total_kewajiban'] as num).toInt() + (_data!['total_ekuitas'] as num).toInt())}',
-                          style: TokenTipografi.angkaTabular(TokenTipografi.seksi),
+                          style:
+                              TokenTipografi.angkaTabular(TokenTipografi.seksi),
                         ),
                       ],
                     ],
@@ -152,7 +168,8 @@ class LayarSaldoAwal extends ConsumerStatefulWidget {
 }
 
 class _LayarSaldoAwalState extends ConsumerState<LayarSaldoAwal> {
-  final _tglCtrl = TextEditingController(text: DateTime.now().toIso8601String().substring(0, 10));
+  final _tglCtrl = TextEditingController(
+      text: DateTime.now().toIso8601String().substring(0, 10));
   final _kasCtrl = TextEditingController(text: '0');
   final _bankCtrl = TextEditingController(text: '0');
   final _peralatanCtrl = TextEditingController(text: '0');
@@ -204,20 +221,33 @@ class _LayarSaldoAwalState extends ConsumerState<LayarSaldoAwal> {
           ],
           IsianTeksPos(controller: _tglCtrl, label: 'Tanggal (YYYY-MM-DD)'),
           const SizedBox(height: TokenJarak.j3),
-          IsianRupiahPos(controller: _kasCtrl, label: '1110 Kas', onChangedNominal: (_) => setState(() {})),
+          IsianRupiahPos(
+              controller: _kasCtrl,
+              label: '1110 Kas',
+              onChangedNominal: (_) => setState(() {})),
           const SizedBox(height: TokenJarak.j3),
-          IsianRupiahPos(controller: _bankCtrl, label: '1120 Bank & QRIS', onChangedNominal: (_) => setState(() {})),
+          IsianRupiahPos(
+              controller: _bankCtrl,
+              label: '1120 Bank & QRIS',
+              onChangedNominal: (_) => setState(() {})),
           const SizedBox(height: TokenJarak.j3),
-          IsianRupiahPos(controller: _peralatanCtrl, label: '1210 Peralatan', onChangedNominal: (_) => setState(() {})),
+          IsianRupiahPos(
+              controller: _peralatanCtrl,
+              label: '1210 Peralatan',
+              onChangedNominal: (_) => setState(() {})),
           const SizedBox(height: TokenJarak.j3),
-          IsianRupiahPos(controller: _utangCtrl, label: '2110 Utang Usaha', onChangedNominal: (_) => setState(() {})),
+          IsianRupiahPos(
+              controller: _utangCtrl,
+              label: '2110 Utang Usaha',
+              onChangedNominal: (_) => setState(() {})),
           const SizedBox(height: TokenJarak.j4),
           Text(
             'Modal Terhitung: ${formatRupiah(_modalTerhitung)}',
             style: TokenTipografi.angkaTabular(TokenTipografi.seksi),
           ),
           const SizedBox(height: TokenJarak.j6),
-          TombolPos(label: 'Simpan Saldo Awal', memuat: _memuat, onPressed: _simpan),
+          TombolPos(
+              label: 'Simpan Saldo Awal', memuat: _memuat, onPressed: _simpan),
         ],
       ),
     );
@@ -233,7 +263,8 @@ class LayarJurnalManual extends ConsumerStatefulWidget {
 
 class _LayarJurnalManualState extends ConsumerState<LayarJurnalManual> {
   String _jenis = 'beban';
-  final _tglCtrl = TextEditingController(text: DateTime.now().toIso8601String().substring(0, 10));
+  final _tglCtrl = TextEditingController(
+      text: DateTime.now().toIso8601String().substring(0, 10));
   final _ketCtrl = TextEditingController();
   final _nominalCtrl = TextEditingController();
   String _debitKode = '5210';
@@ -245,7 +276,10 @@ class _LayarJurnalManualState extends ConsumerState<LayarJurnalManual> {
     'beban': (d: ['5210', '5220'], k: ['1110', '1120', '2120']),
     'prive': (d: ['3120'], k: ['1110', '1120']),
     'peralatan': (d: ['1210'], k: ['1110', '1120', '2110']),
-    'penyesuaian': (d: ['5130', '5210', '5220', '5240'], k: ['1141', '1211', '2120']),
+    'penyesuaian': (
+      d: ['5130', '5210', '5220', '5240'],
+      k: ['1141', '1211', '2120']
+    ),
   };
 
   Future<void> _simpan() async {
@@ -281,14 +315,16 @@ class _LayarJurnalManualState extends ConsumerState<LayarJurnalManual> {
             const SizedBox(height: TokenJarak.j3),
           ],
           DropdownButtonFormField<String>(
-            value: _jenis,
+            initialValue: _jenis,
             decoration: const InputDecoration(labelText: 'Jenis Jurnal'),
             items: const [
-              DropdownMenuItem(value: 'bayar_utang', child: Text('Bayar Utang')),
+              DropdownMenuItem(
+                  value: 'bayar_utang', child: Text('Bayar Utang')),
               DropdownMenuItem(value: 'beban', child: Text('Beban')),
               DropdownMenuItem(value: 'prive', child: Text('Prive')),
               DropdownMenuItem(value: 'peralatan', child: Text('Peralatan')),
-              DropdownMenuItem(value: 'penyesuaian', child: Text('Penyesuaian')),
+              DropdownMenuItem(
+                  value: 'penyesuaian', child: Text('Penyesuaian')),
             ],
             onChanged: (v) {
               if (v != null) {
@@ -304,16 +340,20 @@ class _LayarJurnalManualState extends ConsumerState<LayarJurnalManual> {
           IsianTeksPos(controller: _tglCtrl, label: 'Tanggal (YYYY-MM-DD)'),
           const SizedBox(height: TokenJarak.j3),
           DropdownButtonFormField<String>(
-            value: _debitKode,
+            initialValue: _debitKode,
             decoration: const InputDecoration(labelText: 'Akun Debit'),
-            items: aturan.d.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            items: aturan.d
+                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .toList(),
             onChanged: (v) => setState(() => _debitKode = v!),
           ),
           const SizedBox(height: TokenJarak.j3),
           DropdownButtonFormField<String>(
-            value: _kreditKode,
+            initialValue: _kreditKode,
             decoration: const InputDecoration(labelText: 'Akun Kredit'),
-            items: aturan.k.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            items: aturan.k
+                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .toList(),
             onChanged: (v) => setState(() => _kreditKode = v!),
           ),
           const SizedBox(height: TokenJarak.j3),
@@ -350,7 +390,8 @@ class _LayarTutupPeriodeState extends ConsumerState<LayarTutupPeriode> {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(() => k.dio.get('/periode'));
       if (mounted) {
-        setState(() => _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
+        setState(() =>
+            _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
       }
     } catch (_) {}
   }
@@ -381,7 +422,8 @@ class _LayarTutupPeriodeState extends ConsumerState<LayarTutupPeriode> {
                         final yakin = await tampilkanDialogPos<bool>(
                           context: context,
                           judul: 'Tutup Periode $periode',
-                          isi: const Text('Periode yang ditutup tidak dapat menerima jurnal baru.'),
+                          isi: const Text(
+                              'Periode yang ditutup tidak dapat menerima jurnal baru.'),
                           tombol: [
                             TombolPos(
                               label: 'Batal',
@@ -399,7 +441,8 @@ class _LayarTutupPeriodeState extends ConsumerState<LayarTutupPeriode> {
                         if (yakin != true) return;
                         try {
                           final k = ref.read(klienApiProvider);
-                          await k.kirim(() => k.dio.post('/periode/$periode/tutup'));
+                          await k.kirim(
+                              () => k.dio.post('/periode/$periode/tutup'));
                           await _muat();
                         } on GalatApi catch (g) {
                           if (mounted) setState(() => _pesanGalat = g.pesan);

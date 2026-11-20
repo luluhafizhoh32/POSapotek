@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart' as fl;
+import 'package:material_ui/material_ui.dart' as mui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -6,9 +11,9 @@ import 'package:pharmapos_mobile/app/router.dart';
 import 'package:pharmapos_mobile/app/tema.dart';
 import 'package:pharmapos_mobile/fitur/penjualan/data/penjualan_repositori.dart';
 import 'package:pharmapos_mobile/fitur/penjualan/tampilan/layar_penjualan.dart';
-import 'package:pharmapos_mobile/inti/antrean.dart';
 import 'package:pharmapos_mobile/inti/drift_db.dart';
 import 'package:pharmapos_mobile/inti/galat.dart';
+import 'package:pharmapos_mobile/inti/klien_api.dart';
 import 'package:pharmapos_mobile/inti/printer.dart';
 import 'package:pharmapos_mobile/inti/sesi.dart';
 
@@ -21,12 +26,36 @@ class _PenyimpanMemori implements PenyimpanAman {
   Future<void> write({required String key, required String value}) async {}
 }
 
+class _AdapterKosong implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    return ResponseBody.fromString(
+      jsonEncode({
+        'data': <String, dynamic>{},
+        'meta': {'total': 0},
+      }),
+      200,
+      headers: {
+        Headers.contentTypeHeader: ['application/json']
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 class _RepoPenjualanPalsu implements PenjualanRepositori {
   bool offlineSaatSimpan = false;
   String statusPratinjau = 'ok';
 
   @override
-  Future<List<ItemBarangPos>> cariBarang({String? q, String? barcode}) async => [
+  Future<List<ItemBarangPos>> cariBarang({String? q, String? barcode}) async =>
+      [
         const ItemBarangPos(
           id: 10,
           kode: 'PCT500',
@@ -41,7 +70,8 @@ class _RepoPenjualanPalsu implements PenjualanRepositori {
   Future<void> segarkanCacheBarang() async {}
 
   @override
-  Future<HasilPratinjau> pratinjau(List<({int barangId, int jumlah})> baris) async {
+  Future<HasilPratinjau> pratinjau(
+      List<({int barangId, int jumlah})> baris) async {
     return HasilPratinjau(
       perBarang: {
         for (final b in baris)
@@ -76,14 +106,19 @@ class _RepoPenjualanPalsu implements PenjualanRepositori {
   }
 
   @override
-  Future<InfoPembayaranNontunai> buatPembayaranNontunai(String cara, int jumlah) =>
+  Future<InfoPembayaranNontunai> buatPembayaranNontunai(
+          String cara, int jumlah) =>
       throw UnimplementedError();
   @override
-  Future<InfoPembayaranNontunai> cekPembayaranNontunai(String id) => throw UnimplementedError();
+  Future<InfoPembayaranNontunai> cekPembayaranNontunai(String id) =>
+      throw UnimplementedError();
   @override
-  Future<InfoPembayaranNontunai> simulasiBayar(String id) => throw UnimplementedError();
+  Future<InfoPembayaranNontunai> simulasiBayar(String id) =>
+      throw UnimplementedError();
   @override
-  Future<List<Map<String, dynamic>>> daftarRiwayat({String? dari, String? sampai}) async => [];
+  Future<List<Map<String, dynamic>>> daftarRiwayat(
+          {String? dari, String? sampai}) async =>
+      [];
   @override
   Future<DataStruk> ambilStruk(int penjualanId) => throw UnimplementedError();
 }
@@ -93,7 +128,8 @@ void main() {
     await initializeDateFormatting('id_ID', null);
   });
 
-  testWidgets('Alur penjualan tunai lengkap hingga layar berhasil', (tester) async {
+  testWidgets('Alur penjualan tunai lengkap hingga layar berhasil',
+      (tester) async {
     final repo = _RepoPenjualanPalsu();
     final db = BasisDataLokal.memori();
     final sesi = SesiNotifier(_PenyimpanMemori());
@@ -119,7 +155,16 @@ void main() {
           basisDataLokalProvider.overrideWithValue(db),
           sesiProvider.overrideWith((_) => sesi),
         ],
-        child: MaterialApp(theme: bangunTemaPos(), home: const LayarPenjualan()),
+        child: MaterialApp(
+          theme: bangunTemaPos(),
+          localizationsDelegates: const [
+            fl.GlobalMaterialLocalizations.delegate,
+            fl.GlobalWidgetsLocalizations.delegate,
+            fl.GlobalCupertinoLocalizations.delegate,
+            mui.DefaultMaterialLocalizations.delegate,
+          ],
+          home: const LayarPenjualan(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -148,7 +193,9 @@ void main() {
     await db.close();
   });
 
-  testWidgets('Jalur offline penjualan masuk ke antrean dan tampil pesan tertunda', (tester) async {
+  testWidgets(
+      'Jalur offline penjualan masuk ke antrean dan tampil pesan tertunda',
+      (tester) async {
     final repo = _RepoPenjualanPalsu()..offlineSaatSimpan = true;
     final db = BasisDataLokal.memori();
     final sesi = SesiNotifier(_PenyimpanMemori());
@@ -174,7 +221,16 @@ void main() {
           basisDataLokalProvider.overrideWithValue(db),
           sesiProvider.overrideWith((_) => sesi),
         ],
-        child: MaterialApp(theme: bangunTemaPos(), home: const LayarPenjualan()),
+        child: MaterialApp(
+          theme: bangunTemaPos(),
+          localizationsDelegates: const [
+            fl.GlobalMaterialLocalizations.delegate,
+            fl.GlobalWidgetsLocalizations.delegate,
+            fl.GlobalCupertinoLocalizations.delegate,
+            mui.DefaultMaterialLocalizations.delegate,
+          ],
+          home: const LayarPenjualan(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -188,7 +244,9 @@ void main() {
     await tester.tap(find.text('Simpan Penjualan'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Transaksi tertunda. Akan dikirim otomatis saat tersambung.'), findsOneWidget);
+    expect(
+        find.text('Transaksi tertunda. Akan dikirim otomatis saat tersambung.'),
+        findsOneWidget);
     expect(find.text('Printer belum dipilih'), findsOneWidget);
 
     await db.close();
@@ -218,21 +276,38 @@ void main() {
         ),
       );
 
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost/api/v1'))
+        ..httpClientAdapter = _AdapterKosong();
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             basisDataLokalProvider.overrideWithValue(db),
             sesiProvider.overrideWith((_) => sesi),
-            penjualanRepositoriProvider.overrideWithValue(_RepoPenjualanPalsu()),
+            klienApiProvider.overrideWithValue(KlienApi(sesi: sesi, dioOverride: dio)),
+            penjualanRepositoriProvider
+                .overrideWithValue(_RepoPenjualanPalsu()),
           ],
-          child: MaterialApp(theme: bangunTemaPos(), home: const CangkangUtama()),
+          child: MaterialApp(
+            theme: bangunTemaPos(),
+            localizationsDelegates: const [
+              fl.GlobalMaterialLocalizations.delegate,
+              fl.GlobalWidgetsLocalizations.delegate,
+              fl.GlobalCupertinoLocalizations.delegate,
+              mui.DefaultMaterialLocalizations.delegate,
+            ],
+            home: const CangkangUtama(),
+          ),
         ),
       );
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       for (final tabLabel in entry.value) {
         expect(find.text(tabLabel), findsWidgets);
       }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
       await db.close();
     }
   });

@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../../app/komponen.dart';
@@ -71,7 +71,8 @@ class _LayarOpnameState extends ConsumerState<LayarOpname> {
           }).toList();
         });
       }
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -81,7 +82,8 @@ class _LayarOpnameState extends ConsumerState<LayarOpname> {
 
   Future<void> _simpan() async {
     if (!_semuaTerhitung) {
-      setState(() => _pesanGalat = 'Semua batch harus dihitung terlebih dahulu.');
+      setState(
+          () => _pesanGalat = 'Semua batch harus dihitung terlebih dahulu.');
       return;
     }
 
@@ -96,7 +98,8 @@ class _LayarOpnameState extends ConsumerState<LayarOpname> {
           .map((b) => {
                 'batch_id': b.batchId,
                 'stok_fisik': b.stokFisik!,
-                if (b.keterangan.trim().isNotEmpty) 'keterangan': b.keterangan.trim(),
+                if (b.keterangan.trim().isNotEmpty)
+                  'keterangan': b.keterangan.trim(),
               })
           .toList(),
     };
@@ -131,7 +134,9 @@ class _LayarOpnameState extends ConsumerState<LayarOpname> {
           });
         }
       } else if (g.kode == 'KETERANGAN_WAJIB' && mounted) {
-        final ids = ((g.detail['batch_id'] as List?) ?? []).map((e) => (e as num).toInt()).toSet();
+        final ids = ((g.detail['batch_id'] as List?) ?? [])
+            .map((e) => (e as num).toInt())
+            .toSet();
         setState(() {
           _butuhKeterangan.addAll(ids);
           // Kunci idempotensi BARU karena isi permintaan akan berubah
@@ -208,7 +213,8 @@ class _LayarOpnameState extends ConsumerState<LayarOpname> {
                 if (_pesanGalat != null)
                   Padding(
                     padding: const EdgeInsets.all(TokenJarak.j3),
-                    child: PesanPos(jenis: JenisPesan.bahaya, teks: _pesanGalat!),
+                    child:
+                        PesanPos(jenis: JenisPesan.bahaya, teks: _pesanGalat!),
                   ),
                 Expanded(
                   child: ListView.separated(
@@ -228,10 +234,12 @@ class _LayarOpnameState extends ConsumerState<LayarOpname> {
                               Expanded(
                                 child: Text(
                                   '${b.barangNama} (${b.nomorBatch})',
-                                  style: TokenTipografi.dasar.copyWith(fontWeight: FontWeight.w600),
+                                  style: TokenTipografi.dasar
+                                      .copyWith(fontWeight: FontWeight.w600),
                                 ),
                               ),
-                              LencanaStatusPos(status: sudah ? 'disahkan' : 'tertunda'),
+                              LencanaStatusPos(
+                                  status: sudah ? 'disahkan' : 'tertunda'),
                             ],
                           ),
                           Text(

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Token desain resmi POS Apotek KADIN Bengkalis (Bagian 10.8).
 abstract final class WarnaMentah {

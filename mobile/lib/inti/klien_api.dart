@@ -29,7 +29,7 @@ class KlienApi {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final token = sesi.state.tokenAkses;
+          final token = sesi.saatIni.tokenAkses;
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -53,7 +53,7 @@ class KlienApi {
             if (berhasil) {
               final opts = err.requestOptions;
               opts.extra['_sudah_segarkan'] = true;
-              opts.headers['Authorization'] = 'Bearer ${sesi.state.tokenAkses}';
+              opts.headers['Authorization'] = 'Bearer ${sesi.saatIni.tokenAkses}';
               try {
                 final res = await dio.fetch(opts);
                 return handler.resolve(res);
@@ -80,7 +80,7 @@ class KlienApi {
     _refreshCompleter = completer;
 
     try {
-      final tokenSegar = sesi.state.tokenSegar;
+      final tokenSegar = sesi.saatIni.tokenSegar;
       if (tokenSegar == null || tokenSegar.isEmpty) {
         completer.complete(false);
         return false;

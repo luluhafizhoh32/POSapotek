@@ -134,6 +134,8 @@ class SesiNotifier extends StateNotifier<SesiState> {
 
   SesiNotifier(this._penyimpan) : super(const SesiState());
 
+  SesiState get saatIni => state;
+
   static const _kAkses = 'token_akses';
   static const _kSegar = 'token_segar';
   static const _kPengguna = 'pengguna_json';

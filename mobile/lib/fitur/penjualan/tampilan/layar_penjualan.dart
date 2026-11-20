@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -30,7 +30,8 @@ class ItemKeranjang {
 
   int get subtotal => barang.hargaJual * jumlah;
 
-  ItemKeranjang copyWith({int? jumlah, String? statusPratinjau, int? stokTersedia}) =>
+  ItemKeranjang copyWith(
+          {int? jumlah, String? statusPratinjau, int? stokTersedia}) =>
       ItemKeranjang(
         barang: barang,
         jumlah: jumlah ?? this.jumlah,
@@ -65,7 +66,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
   String? _pesanInfo;
   HasilSimpanPenjualan? _hasilBerhasil;
   bool _tertundaTerakhir = false;
-  List<({String nama, int jumlah, int hargaSatuan, int subtotal})> _barisTertunda = const [];
+  List<({String nama, int jumlah, int hargaSatuan, int subtotal})>
+      _barisTertunda = const [];
   int _totalTertunda = 0;
 
   @override
@@ -115,7 +117,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
       ),
     );
     if (kode == null || kode.isEmpty) return;
-    final res = await ref.read(penjualanRepositoriProvider).cariBarang(barcode: kode);
+    final res =
+        await ref.read(penjualanRepositoriProvider).cariBarang(barcode: kode);
     if (!mounted) return;
     if (res.isEmpty) {
       setState(() => _pesanInfo = 'Barcode tidak dikenal.');
@@ -129,7 +132,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
       _pesanInfo = null;
       final idx = _keranjang.indexWhere((k) => k.barang.id == barang.id);
       if (idx >= 0) {
-        _keranjang[idx] = _keranjang[idx].copyWith(jumlah: _keranjang[idx].jumlah + 1);
+        _keranjang[idx] =
+            _keranjang[idx].copyWith(jumlah: _keranjang[idx].jumlah + 1);
       } else {
         _keranjang.add(ItemKeranjang(barang: barang, jumlah: 1));
       }
@@ -151,14 +155,17 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
   void _jadwalkanPratinjau() {
     _debouncePratinjau?.cancel();
     if (_keranjang.isEmpty) return;
-    _debouncePratinjau = Timer(const Duration(milliseconds: 300), _jalankanPratinjau);
+    _debouncePratinjau =
+        Timer(const Duration(milliseconds: 300), _jalankanPratinjau);
   }
 
   Future<void> _jalankanPratinjau() async {
     if (_keranjang.isEmpty) return;
     try {
       final res = await ref.read(penjualanRepositoriProvider).pratinjau(
-            _keranjang.map((k) => (barangId: k.barang.id, jumlah: k.jumlah)).toList(),
+            _keranjang
+                .map((k) => (barangId: k.barang.id, jumlah: k.jumlah))
+                .toList(),
           );
       if (!mounted) return;
       setState(() {
@@ -185,7 +192,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
   bool get _bisaBayar {
     if (_keranjang.isEmpty) return false;
     if (_sedangOfflineEstimasi) return true;
-    return _keranjang.every((k) => k.statusPratinjau == null || k.statusPratinjau == 'ok');
+    return _keranjang
+        .every((k) => k.statusPratinjau == null || k.statusPratinjau == 'ok');
   }
 
   Future<void> _bukaPanelPembayaran() async {
@@ -193,12 +201,15 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(TokenRadius.sedang)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(TokenRadius.sedang)),
       ),
       builder: (ctx) => _PanelPembayaran(
         total: _totalKeranjang,
         kunciIdempoten: _kunciIdempoten,
-        baris: _keranjang.map((k) => (barangId: k.barang.id, jumlah: k.jumlah)).toList(),
+        baris: _keranjang
+            .map((k) => (barangId: k.barang.id, jumlah: k.jumlah))
+            .toList(),
         sedangOffline: _sedangOfflineEstimasi,
       ),
     );
@@ -244,7 +255,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
               if (_tertundaTerakhir) ...[
                 const PesanPos(
                   jenis: JenisPesan.informasi,
-                  teks: 'Transaksi tertunda. Akan dikirim otomatis saat tersambung.',
+                  teks:
+                      'Transaksi tertunda. Akan dikirim otomatis saat tersambung.',
                 ),
                 const SizedBox(height: TokenJarak.j4),
                 Text(
@@ -253,7 +265,9 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                 ),
                 const SizedBox(height: TokenJarak.j6),
                 TombolPos(
-                  label: printerMac == null ? 'Printer belum dipilih' : 'Cetak Bukti Sementara',
+                  label: printerMac == null
+                      ? 'Printer belum dipilih'
+                      : 'Cetak Bukti Sementara',
                   jenis: JenisTombol.sekunder,
                   onPressed: printerMac == null
                       ? null
@@ -264,9 +278,12 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                           ),
                 ),
               ] else if (_hasilBerhasil != null) ...[
-                const PesanPos(jenis: JenisPesan.berhasil, teks: 'Penjualan berhasil disimpan.'),
+                const PesanPos(
+                    jenis: JenisPesan.berhasil,
+                    teks: 'Penjualan berhasil disimpan.'),
                 const SizedBox(height: TokenJarak.j4),
-                Text('Nomor: ${_hasilBerhasil!.nomor}', style: TokenTipografi.seksi),
+                Text('Nomor: ${_hasilBerhasil!.nomor}',
+                    style: TokenTipografi.seksi),
                 const SizedBox(height: TokenJarak.j2),
                 Text(
                   'Total: ${formatRupiah(_hasilBerhasil!.total)}',
@@ -276,19 +293,24 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                   const SizedBox(height: TokenJarak.j2),
                   Text(
                     'Kembalian: ${formatRupiah(_hasilBerhasil!.kembalian!)}',
-                    style: TokenTipografi.angkaTabular(TokenTipografi.ringkasan),
+                    style:
+                        TokenTipografi.angkaTabular(TokenTipografi.ringkasan),
                   ),
                 ],
                 const SizedBox(height: TokenJarak.j6),
                 TombolPos(
-                  label: printerMac == null ? 'Printer belum dipilih' : 'Cetak Struk',
+                  label: printerMac == null
+                      ? 'Printer belum dipilih'
+                      : 'Cetak Struk',
                   onPressed: printerMac == null
                       ? null
                       : () async {
                           final struk = await ref
                               .read(penjualanRepositoriProvider)
                               .ambilStruk(_hasilBerhasil!.id);
-                          await ref.read(pencetakProvider).cetakStruk(struk, printerMac);
+                          await ref
+                              .read(pencetakProvider)
+                              .cetakStruk(struk, printerMac);
                         },
                 ),
               ],
@@ -339,16 +361,20 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                       style: TokenTipografi.dasar,
                       decoration: InputDecoration(
                         hintText: 'Cari obat atau pindai barcode',
-                        hintStyle: TokenTipografi.dasar.copyWith(color: TokenTeks.placeholder),
+                        hintStyle: TokenTipografi.dasar
+                            .copyWith(color: TokenTeks.placeholder),
                         filled: true,
                         fillColor: TokenLatar.latar,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: TokenJarak.j3),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: TokenJarak.j3),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(TokenRadius.kecil),
+                          borderRadius:
+                              BorderRadius.circular(TokenRadius.kecil),
                           borderSide: const BorderSide(color: TokenGaris.isian),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(TokenRadius.kecil),
+                          borderRadius:
+                              BorderRadius.circular(TokenRadius.kecil),
                           borderSide: const BorderSide(
                             color: TokenAksi.fokus,
                             width: TokenGarisTebal.t2,
@@ -393,17 +419,21 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                     final item = _keranjang[i];
                     String? pesanBaris;
                     if (item.statusPratinjau == 'stok_tidak_cukup') {
-                      pesanBaris = 'Stok tidak cukup (sisa ${item.stokTersedia ?? 0})';
-                    } else if (item.statusPratinjau == 'semua_batch_kedaluwarsa') {
+                      pesanBaris =
+                          'Stok tidak cukup (sisa ${item.stokTersedia ?? 0})';
+                    } else if (item.statusPratinjau ==
+                        'semua_batch_kedaluwarsa') {
                       pesanBaris = 'Semua batch kedaluwarsa';
                     } else if (item.statusPratinjau == 'barang_nonaktif') {
                       pesanBaris = 'Barang nonaktif';
                     }
 
                     return Container(
-                      padding: const EdgeInsets.symmetric(vertical: TokenJarak.j2),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: TokenJarak.j2),
                       decoration: const BoxDecoration(
-                        border: Border(bottom: BorderSide(color: TokenGaris.pemisah)),
+                        border: Border(
+                            bottom: BorderSide(color: TokenGaris.pemisah)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,12 +443,14 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                               Expanded(
                                 child: Text(
                                   item.barang.nama,
-                                  style: TokenTipografi.dasar.copyWith(fontWeight: FontWeight.w600),
+                                  style: TokenTipografi.dasar
+                                      .copyWith(fontWeight: FontWeight.w600),
                                 ),
                               ),
                               Text(
                                 formatRupiah(item.subtotal),
-                                style: TokenTipografi.angkaTabular(TokenTipografi.dasar)
+                                style: TokenTipografi.angkaTabular(
+                                        TokenTipografi.dasar)
                                     .copyWith(fontWeight: FontWeight.w600),
                               ),
                             ],
@@ -430,7 +462,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                                 width: TokenUkuran.targetSentuhMin,
                                 height: TokenUkuran.targetSentuhMin,
                                 child: IconButton(
-                                  onPressed: () => _ubahJumlah(i, item.jumlah - 1),
+                                  onPressed: () =>
+                                      _ubahJumlah(i, item.jumlah - 1),
                                   icon: const Icon(LucideIcons.minus),
                                 ),
                               ),
@@ -439,14 +472,16 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                                 child: Text(
                                   '${item.jumlah}',
                                   textAlign: TextAlign.center,
-                                  style: TokenTipografi.angkaTabular(TokenTipografi.dasar),
+                                  style: TokenTipografi.angkaTabular(
+                                      TokenTipografi.dasar),
                                 ),
                               ),
                               SizedBox(
                                 width: TokenUkuran.targetSentuhMin,
                                 height: TokenUkuran.targetSentuhMin,
                                 child: IconButton(
-                                  onPressed: () => _ubahJumlah(i, item.jumlah + 1),
+                                  onPressed: () =>
+                                      _ubahJumlah(i, item.jumlah + 1),
                                   icon: const Icon(LucideIcons.plus),
                                 ),
                               ),
@@ -455,14 +490,16 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                                 onPressed: () => _ubahJumlah(i, 0),
                                 child: Text(
                                   'Hapus',
-                                  style: TokenTipografi.tabel.copyWith(color: TokenStatus.bahayaTeks),
+                                  style: TokenTipografi.tabel
+                                      .copyWith(color: TokenStatus.bahayaTeks),
                                 ),
                               ),
                             ],
                           ),
                           if (pesanBaris != null)
                             Padding(
-                              padding: const EdgeInsets.only(top: TokenJarak.j1),
+                              padding:
+                                  const EdgeInsets.only(top: TokenJarak.j1),
                               child: Text(
                                 pesanBaris,
                                 style: TokenTipografi.keterangan
@@ -481,10 +518,13 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                   (b) => InkWell(
                     onTap: () => _tambahKeKeranjang(b),
                     child: Container(
-                      constraints: const BoxConstraints(minHeight: TokenUkuran.tinggiBarisDaftar),
-                      padding: const EdgeInsets.symmetric(vertical: TokenJarak.j2),
+                      constraints: const BoxConstraints(
+                          minHeight: TokenUkuran.tinggiBarisDaftar),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: TokenJarak.j2),
                       decoration: const BoxDecoration(
-                        border: Border(bottom: BorderSide(color: TokenGaris.pemisah)),
+                        border: Border(
+                            bottom: BorderSide(color: TokenGaris.pemisah)),
                       ),
                       child: Row(
                         children: [
@@ -502,7 +542,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                           ),
                           Text(
                             formatRupiah(b.hargaJual),
-                            style: TokenTipografi.angkaTabular(TokenTipografi.dasar)
+                            style: TokenTipografi.angkaTabular(
+                                    TokenTipografi.dasar)
                                 .copyWith(fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -528,7 +569,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                       const Text('Total', style: TokenTipografi.keterangan),
                       Text(
                         formatRupiah(_totalKeranjang),
-                        style: TokenTipografi.angkaTabular(TokenTipografi.judul),
+                        style:
+                            TokenTipografi.angkaTabular(TokenTipografi.judul),
                       ),
                     ],
                   ),
@@ -601,7 +643,9 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
       _pesanGalat = null;
     });
     final payload = {
-      'baris': widget.baris.map((b) => {'barang_id': b.barangId, 'jumlah': b.jumlah}).toList(),
+      'baris': widget.baris
+          .map((b) => {'barang_id': b.barangId, 'jumlah': b.jumlah})
+          .toList(),
       'cara_bayar': 'tunai',
       'uang_diterima': _uangDiterima,
       'pembayaran_nontunai_id': null,
@@ -613,7 +657,8 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
             kunciIdempoten: widget.kunciIdempoten,
             payload: payload,
           );
-      if (mounted) Navigator.of(context).pop(_HasilPanelBayar(penjualan: hasil));
+      if (mounted)
+        Navigator.of(context).pop(_HasilPanelBayar(penjualan: hasil));
     } on GalatApi catch (g) {
       if (g.adalahGalatJaringan) {
         await ref.read(antreanProvider.notifier).masukkan(
@@ -621,7 +666,8 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
               kunciIdempoten: widget.kunciIdempoten,
               payload: payload,
             );
-        if (mounted) Navigator.of(context).pop(const _HasilPanelBayar(tertunda: true));
+        if (mounted)
+          Navigator.of(context).pop(const _HasilPanelBayar(tertunda: true));
       } else {
         if (mounted) setState(() => _pesanGalat = g.pesan);
       }
@@ -632,7 +678,8 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
 
   Future<void> _mulaiNontunai(String cara) async {
     if (widget.sedangOffline) {
-      setState(() => _pesanGalat = 'Pembayaran QRIS/transfer membutuhkan koneksi internet.');
+      setState(() => _pesanGalat =
+          'Pembayaran QRIS/transfer membutuhkan koneksi internet.');
       return;
     }
     setState(() {
@@ -640,12 +687,16 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
       _pesanGalat = null;
     });
     try {
-      final info =
-          await ref.read(penjualanRepositoriProvider).buatPembayaranNontunai(cara, widget.total);
+      final info = await ref
+          .read(penjualanRepositoriProvider)
+          .buatPembayaranNontunai(cara, widget.total);
       if (!mounted) return;
       setState(() {
         _nontunai = info;
-        _sisaDetik = info.kedaluwarsaPada.difference(DateTime.now()).inSeconds.clamp(0, 3600);
+        _sisaDetik = info.kedaluwarsaPada
+            .difference(DateTime.now())
+            .inSeconds
+            .clamp(0, 3600);
       });
       _mulaiPolling(info.id);
     } on GalatApi catch (g) {
@@ -672,8 +723,9 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
 
     _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
       try {
-        final cek =
-            await ref.read(penjualanRepositoriProvider).cekPembayaranNontunai(pembayaranId);
+        final cek = await ref
+            .read(penjualanRepositoriProvider)
+            .cekPembayaranNontunai(pembayaranId);
         if (!mounted) return;
         setState(() => _nontunai = cek);
         if (cek.status == 'dibayar') {
@@ -690,7 +742,9 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
 
   Future<void> _simpanNontunai(String pembayaranId) async {
     final payload = {
-      'baris': widget.baris.map((b) => {'barang_id': b.barangId, 'jumlah': b.jumlah}).toList(),
+      'baris': widget.baris
+          .map((b) => {'barang_id': b.barangId, 'jumlah': b.jumlah})
+          .toList(),
       'cara_bayar': _cara,
       'uang_diterima': null,
       'pembayaran_nontunai_id': pembayaranId,
@@ -720,7 +774,8 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Pembayaran · ${formatRupiah(widget.total)}', style: TokenTipografi.seksi),
+            Text('Pembayaran · ${formatRupiah(widget.total)}',
+                style: TokenTipografi.seksi),
             const SizedBox(height: TokenJarak.j3),
             if (_pesanGalat != null) ...[
               PesanPos(jenis: JenisPesan.bahaya, teks: _pesanGalat!),
@@ -737,10 +792,12 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
                 };
                 return Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: TokenJarak.j1),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: TokenJarak.j1),
                     child: TombolPos(
                       label: label,
-                      jenis: terpilih ? JenisTombol.utama : JenisTombol.sekunder,
+                      jenis:
+                          terpilih ? JenisTombol.utama : JenisTombol.sekunder,
                       onPressed: () {
                         _pollingTimer?.cancel();
                         _countdownTimer?.cancel();
@@ -769,9 +826,15 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
               Wrap(
                 spacing: TokenJarak.j2,
                 children: [
-                  ActionChip(label: const Text('Uang pas'), onPressed: () => _setNominal(widget.total)),
-                  ActionChip(label: const Text('Rp50.000'), onPressed: () => _setNominal(50000)),
-                  ActionChip(label: const Text('Rp100.000'), onPressed: () => _setNominal(100000)),
+                  ActionChip(
+                      label: const Text('Uang pas'),
+                      onPressed: () => _setNominal(widget.total)),
+                  ActionChip(
+                      label: const Text('Rp50.000'),
+                      onPressed: () => _setNominal(50000)),
+                  ActionChip(
+                      label: const Text('Rp100.000'),
+                      onPressed: () => _setNominal(100000)),
                 ],
               ),
               const SizedBox(height: TokenJarak.j3),
@@ -779,7 +842,8 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
                 kurang
                     ? 'Kurang ${formatRupiah(widget.total - _uangDiterima)}'
                     : 'Kembalian: ${formatRupiah(kembalian)}',
-                style: TokenTipografi.angkaTabular(TokenTipografi.seksi).copyWith(
+                style:
+                    TokenTipografi.angkaTabular(TokenTipografi.seksi).copyWith(
                   color: kurang ? TokenStatus.bahayaTeks : TokenTeks.utama,
                 ),
               ),
@@ -801,7 +865,9 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
                     ),
                     const SizedBox(height: TokenJarak.j2),
                     LencanaStatusPos(
-                      status: _nontunai!.status == 'kedaluwarsa' ? 'kedaluwarsa' : 'menunggu',
+                      status: _nontunai!.status == 'kedaluwarsa'
+                          ? 'kedaluwarsa'
+                          : 'menunggu',
                     ),
                     if (_nontunai!.status == 'kedaluwarsa') ...[
                       const SizedBox(height: TokenJarak.j3),
@@ -837,7 +903,8 @@ class LayarRiwayatPenjualan extends ConsumerStatefulWidget {
   const LayarRiwayatPenjualan({super.key});
 
   @override
-  ConsumerState<LayarRiwayatPenjualan> createState() => _LayarRiwayatPenjualanState();
+  ConsumerState<LayarRiwayatPenjualan> createState() =>
+      _LayarRiwayatPenjualanState();
 }
 
 class _LayarRiwayatPenjualanState extends ConsumerState<LayarRiwayatPenjualan> {
@@ -855,7 +922,8 @@ class _LayarRiwayatPenjualanState extends ConsumerState<LayarRiwayatPenjualan> {
     try {
       final res = await ref.read(penjualanRepositoriProvider).daftarRiwayat();
       if (mounted) setState(() => _daftar = res);
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -880,7 +948,8 @@ class _LayarRiwayatPenjualanState extends ConsumerState<LayarRiwayatPenjualan> {
                       final r = _daftar[i];
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(r['nomor'] as String, style: TokenTipografi.dasar),
+                        title: Text(r['nomor'] as String,
+                            style: TokenTipografi.dasar),
                         subtitle: Text(
                           '${formatJam(r['waktu'])} · ${(r['cara_bayar'] as String).toUpperCase()}',
                           style: TokenTipografi.keterangan,
@@ -890,7 +959,8 @@ class _LayarRiwayatPenjualanState extends ConsumerState<LayarRiwayatPenjualan> {
                           children: [
                             Text(
                               formatRupiah((r['total'] as num).toInt()),
-                              style: TokenTipografi.angkaTabular(TokenTipografi.dasar)
+                              style: TokenTipografi.angkaTabular(
+                                      TokenTipografi.dasar)
                                   .copyWith(fontWeight: FontWeight.w600),
                             ),
                             if (printerMac != null)
@@ -900,7 +970,9 @@ class _LayarRiwayatPenjualanState extends ConsumerState<LayarRiwayatPenjualan> {
                                   final struk = await ref
                                       .read(penjualanRepositoriProvider)
                                       .ambilStruk((r['id'] as num).toInt());
-                                  await ref.read(pencetakProvider).cetakStruk(struk, printerMac);
+                                  await ref
+                                      .read(pencetakProvider)
+                                      .cetakStruk(struk, printerMac);
                                 },
                               ),
                           ],

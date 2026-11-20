@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../inti/format.dart';
 import 'token.dart';
 
@@ -166,7 +166,8 @@ class IsianTeksPos extends StatelessWidget {
             style: TokenTipografi.dasar,
             decoration: InputDecoration(
               hintText: placeholder,
-              hintStyle: TokenTipografi.dasar.copyWith(color: TokenTeks.placeholder),
+              hintStyle:
+                  TokenTipografi.dasar.copyWith(color: TokenTeks.placeholder),
               filled: true,
               fillColor: readOnly ? TokenLatar.nonaktif : TokenLatar.latar,
               contentPadding: const EdgeInsets.symmetric(
@@ -195,7 +196,8 @@ class IsianTeksPos extends StatelessWidget {
           const SizedBox(height: TokenJarak.j1),
           Text(
             pesanSalah!,
-            style: TokenTipografi.keterangan.copyWith(color: TokenStatus.bahayaTeks),
+            style: TokenTipografi.keterangan
+                .copyWith(color: TokenStatus.bahayaTeks),
           ),
         ] else if (teksBantu != null && teksBantu!.isNotEmpty) ...[
           const SizedBox(height: TokenJarak.j1),
@@ -284,7 +286,8 @@ class IsianRupiahPos extends StatelessWidget {
           const SizedBox(height: TokenJarak.j1),
           Text(
             pesanSalah!,
-            style: TokenTipografi.keterangan.copyWith(color: TokenStatus.bahayaTeks),
+            style: TokenTipografi.keterangan
+                .copyWith(color: TokenStatus.bahayaTeks),
           ),
         ],
       ],
@@ -294,7 +297,8 @@ class IsianRupiahPos extends StatelessWidget {
 
 class _FormatterRibuan extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
     final digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (digits.isEmpty) return const TextEditingValue();
     final angka = int.tryParse(digits) ?? 0;
@@ -338,7 +342,8 @@ class DaftarPilihanPos<T> extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: TokenLatar.latar,
-            border: Border.all(color: TokenGaris.isian, width: TokenGarisTebal.t1),
+            border:
+                Border.all(color: TokenGaris.isian, width: TokenGarisTebal.t1),
             borderRadius: BorderRadius.circular(TokenRadius.kecil),
           ),
           child: Column(
@@ -348,7 +353,8 @@ class DaftarPilihanPos<T> extends StatelessWidget {
                 onTap: () => onPilih(o.nilai),
                 child: Container(
                   height: TokenUkuran.tinggiBarisDaftar,
-                  padding: const EdgeInsets.symmetric(horizontal: TokenJarak.j3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: TokenJarak.j3),
                   color: terpilih ? TokenLatar.terpilih : Colors.transparent,
                   child: Row(
                     children: [
@@ -356,12 +362,14 @@ class DaftarPilihanPos<T> extends StatelessWidget {
                         child: Text(
                           o.teks,
                           style: TokenTipografi.dasar.copyWith(
-                            fontWeight: terpilih ? FontWeight.w600 : FontWeight.w400,
+                            fontWeight:
+                                terpilih ? FontWeight.w600 : FontWeight.w400,
                           ),
                         ),
                       ),
                       if (terpilih)
-                        const Icon(LucideIcons.check, size: 20, color: TokenAksi.utama),
+                        const Icon(LucideIcons.check,
+                            size: 20, color: TokenAksi.utama),
                     ],
                   ),
                 ),
@@ -392,7 +400,8 @@ class TabelBarisPos extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: TokenLatar.latar,
-        border: Border.all(color: TokenGaris.pemisah, width: TokenGarisTebal.t1),
+        border:
+            Border.all(color: TokenGaris.pemisah, width: TokenGarisTebal.t1),
         borderRadius: BorderRadius.circular(TokenRadius.kecil),
       ),
       child: Column(
@@ -403,12 +412,15 @@ class TabelBarisPos extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: TokenJarak.j3),
             child: Row(
               children: List.generate(kepala.length, (i) {
-                final kanan = rataKanan != null && i < rataKanan!.length ? rataKanan![i] : false;
+                final kanan = rataKanan != null && i < rataKanan!.length
+                    ? rataKanan![i]
+                    : false;
                 return Expanded(
                   child: Text(
                     kepala[i],
                     textAlign: kanan ? TextAlign.right : TextAlign.left,
-                    style: TokenTipografi.tabel.copyWith(fontWeight: FontWeight.w600),
+                    style: TokenTipografi.tabel
+                        .copyWith(fontWeight: FontWeight.w600),
                   ),
                 );
               }),
@@ -417,7 +429,8 @@ class TabelBarisPos extends StatelessWidget {
           ...List.generate(baris.length, (idx) {
             final row = baris[idx];
             return Container(
-              constraints: const BoxConstraints(minHeight: TokenUkuran.tinggiBarisDaftar),
+              constraints: const BoxConstraints(
+                  minHeight: TokenUkuran.tinggiBarisDaftar),
               padding: const EdgeInsets.symmetric(
                 horizontal: TokenJarak.j3,
                 vertical: TokenJarak.j2,
@@ -425,12 +438,15 @@ class TabelBarisPos extends StatelessWidget {
               decoration: BoxDecoration(
                 color: idx.isOdd ? TokenLatar.selang : TokenLatar.latar,
                 border: const Border(
-                  top: BorderSide(color: TokenGaris.pemisah, width: TokenGarisTebal.t1),
+                  top: BorderSide(
+                      color: TokenGaris.pemisah, width: TokenGarisTebal.t1),
                 ),
               ),
               child: Row(
                 children: List.generate(row.length, (i) {
-                  final kanan = rataKanan != null && i < rataKanan!.length ? rataKanan![i] : false;
+                  final kanan = rataKanan != null && i < rataKanan!.length
+                      ? rataKanan![i]
+                      : false;
                   return Expanded(
                     child: Text(
                       row[i],
@@ -490,7 +506,8 @@ class PesanPos extends StatelessWidget {
       decoration: BoxDecoration(
         color: warnaLatar,
         border: Border(
-          left: BorderSide(color: warnaTeks, width: TokenGarisTebal.penandaPesan),
+          left:
+              BorderSide(color: warnaTeks, width: TokenGarisTebal.penandaPesan),
         ),
       ),
       child: Row(
@@ -501,7 +518,8 @@ class PesanPos extends StatelessWidget {
           Expanded(
             child: Text(
               teks,
-              style: TokenTipografi.tabel.copyWith(color: warnaTeks, fontWeight: FontWeight.w500),
+              style: TokenTipografi.tabel
+                  .copyWith(color: warnaTeks, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -564,25 +582,92 @@ class LencanaStatusPos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (String label, Color warnaTeks, Color warnaLatar, IconData ikon) = switch (status) {
-      'tertunda' => ('Tertunda', TokenStatus.informasiTeks, TokenStatus.informasiLatar, LucideIcons.clock),
-      'mengirim' => ('Mengirim', TokenStatus.informasiTeks, TokenStatus.informasiLatar, LucideIcons.upload),
-      'gagal' => ('Gagal', TokenStatus.bahayaTeks, TokenStatus.bahayaLatar, LucideIcons.xCircle),
-      'menunggu' => ('Menunggu pengesahan', TokenStatus.peringatanTeks, TokenStatus.peringatanLatar, LucideIcons.clock),
-      'disahkan' => ('Disahkan', TokenStatus.berhasilTeks, TokenStatus.berhasilLatar, LucideIcons.checkCircle2),
-      'ditolak' => ('Ditolak', TokenStatus.bahayaTeks, TokenStatus.bahayaLatar, LucideIcons.xCircle),
-      'dikembalikan' => ('Dikembalikan', TokenStatus.informasiTeks, TokenStatus.informasiLatar, LucideIcons.rotateCcw),
-      'mendekati' => ('Mendekati kedaluwarsa', TokenStatus.peringatanTeks, TokenStatus.peringatanLatar, LucideIcons.alertTriangle),
-      'kedaluwarsa' => ('Kedaluwarsa', TokenStatus.bahayaTeks, TokenStatus.bahayaLatar, LucideIcons.alertCircle),
-      'terbuka' => ('Terbuka', TokenStatus.informasiTeks, TokenStatus.informasiLatar, LucideIcons.unlock),
-      'ditutup' => ('Ditutup', TokenStatus.berhasilTeks, TokenStatus.berhasilLatar, LucideIcons.lock),
-      'terbit' => ('Terbit', TokenStatus.berhasilTeks, TokenStatus.berhasilLatar, LucideIcons.checkCircle2),
-      'belum_terkirim' => ('Belum terkirim', TokenStatus.peringatanTeks, TokenStatus.peringatanLatar, LucideIcons.alertTriangle),
+    final (String label, Color warnaTeks, Color warnaLatar, IconData ikon) =
+        switch (status) {
+      'tertunda' => (
+          'Tertunda',
+          TokenStatus.informasiTeks,
+          TokenStatus.informasiLatar,
+          LucideIcons.clock
+        ),
+      'mengirim' => (
+          'Mengirim',
+          TokenStatus.informasiTeks,
+          TokenStatus.informasiLatar,
+          LucideIcons.upload
+        ),
+      'gagal' => (
+          'Gagal',
+          TokenStatus.bahayaTeks,
+          TokenStatus.bahayaLatar,
+          LucideIcons.xCircle
+        ),
+      'menunggu' => (
+          'Menunggu pengesahan',
+          TokenStatus.peringatanTeks,
+          TokenStatus.peringatanLatar,
+          LucideIcons.clock
+        ),
+      'disahkan' => (
+          'Disahkan',
+          TokenStatus.berhasilTeks,
+          TokenStatus.berhasilLatar,
+          LucideIcons.checkCircle2
+        ),
+      'ditolak' => (
+          'Ditolak',
+          TokenStatus.bahayaTeks,
+          TokenStatus.bahayaLatar,
+          LucideIcons.xCircle
+        ),
+      'dikembalikan' => (
+          'Dikembalikan',
+          TokenStatus.informasiTeks,
+          TokenStatus.informasiLatar,
+          LucideIcons.rotateCcw
+        ),
+      'mendekati' => (
+          'Mendekati kedaluwarsa',
+          TokenStatus.peringatanTeks,
+          TokenStatus.peringatanLatar,
+          LucideIcons.alertTriangle
+        ),
+      'kedaluwarsa' => (
+          'Kedaluwarsa',
+          TokenStatus.bahayaTeks,
+          TokenStatus.bahayaLatar,
+          LucideIcons.alertCircle
+        ),
+      'terbuka' => (
+          'Terbuka',
+          TokenStatus.informasiTeks,
+          TokenStatus.informasiLatar,
+          LucideIcons.unlock
+        ),
+      'ditutup' => (
+          'Ditutup',
+          TokenStatus.berhasilTeks,
+          TokenStatus.berhasilLatar,
+          LucideIcons.lock
+        ),
+      'terbit' => (
+          'Terbit',
+          TokenStatus.berhasilTeks,
+          TokenStatus.berhasilLatar,
+          LucideIcons.checkCircle2
+        ),
+      'belum_terkirim' => (
+          'Belum terkirim',
+          TokenStatus.peringatanTeks,
+          TokenStatus.peringatanLatar,
+          LucideIcons.alertTriangle
+        ),
       _ => (status, TokenTeks.sekunder, TokenLatar.selang, LucideIcons.info),
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: TokenJarak.j2, vertical: TokenJarak.j1),
+      padding: const EdgeInsets.symmetric(
+          horizontal: TokenJarak.j2, vertical: TokenJarak.j1),
       decoration: BoxDecoration(
         color: warnaLatar,
         borderRadius: BorderRadius.circular(TokenRadius.kecil),

@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
 import '../../../inti/antrean.dart';
+import '../../../inti/drift_db.dart';
 import '../../../inti/format.dart';
 import '../../../inti/klien_api.dart';
 import '../../../inti/sesi.dart';
@@ -34,9 +35,11 @@ class _LayarNotifikasiState extends ConsumerState<LayarNotifikasi> {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(() => k.dio.get('/notifikasi'));
       if (mounted) {
-        setState(() => _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
+        setState(() =>
+            _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
       }
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -73,7 +76,8 @@ class _LayarNotifikasiState extends ConsumerState<LayarNotifikasi> {
                       title: Text(
                         n['judul'] as String,
                         style: TokenTipografi.dasar.copyWith(
-                          fontWeight: belumBaca ? FontWeight.w700 : FontWeight.w400,
+                          fontWeight:
+                              belumBaca ? FontWeight.w700 : FontWeight.w400,
                         ),
                       ),
                       subtitle: Text(
@@ -83,7 +87,8 @@ class _LayarNotifikasiState extends ConsumerState<LayarNotifikasi> {
                       onTap: () async {
                         if (belumBaca) {
                           final k = ref.read(klienApiProvider);
-                          await k.kirim(() => k.dio.post('/notifikasi/${n['id']}/dibaca'));
+                          await k.kirim(() =>
+                              k.dio.post('/notifikasi/${n['id']}/dibaca'));
                           await _muat();
                         }
                       },
@@ -116,7 +121,9 @@ class LayarAkun extends ConsumerWidget {
                     title: Text(d.name),
                     subtitle: Text(d.macAdress),
                     onTap: () async {
-                      await ref.read(sesiProvider.notifier).simpanPrinter(d.macAdress, d.name);
+                      await ref
+                          .read(sesiProvider.notifier)
+                          .simpanPrinter(d.macAdress, d.name);
                       if (ctx.mounted) Navigator.pop(ctx);
                     },
                   );
@@ -209,7 +216,9 @@ class LayarAkun extends ConsumerWidget {
                 );
                 if (keluar != true) return;
                 if (pengguna != null) {
-                  await ref.read(basisDataLokalProvider).hapusSemuaAntreanPengguna(pengguna.id);
+                  await ref
+                      .read(basisDataLokalProvider)
+                      .hapusSemuaAntreanPengguna(pengguna.id);
                 }
               }
               await ref.read(authRepositoriProvider).keluar();

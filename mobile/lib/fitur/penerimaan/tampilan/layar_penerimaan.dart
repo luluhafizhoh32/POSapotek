@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
@@ -28,8 +28,7 @@ class _BarisTerima {
     required this.tanggalKedaluwarsa,
     required this.jumlah,
     required this.hargaBeli,
-    this.gabungKeBatchAda = false,
-  });
+  }) : gabungKeBatchAda = false;
 }
 
 class LayarPenerimaan extends ConsumerStatefulWidget {
@@ -71,8 +70,10 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
   Future<void> _muatMaster() async {
     try {
       final k = ref.read(klienApiProvider);
-      final resP = await k.kirim(() => k.dio.get('/pemasok', queryParameters: {'per_halaman': 100}));
-      final resB = await k.kirim(() => k.dio.get('/barang', queryParameters: {'per_halaman': 100}));
+      final resP = await k.kirim(
+          () => k.dio.get('/pemasok', queryParameters: {'per_halaman': 100}));
+      final resB = await k.kirim(
+          () => k.dio.get('/barang', queryParameters: {'per_halaman': 100}));
       if (mounted) {
         setState(() {
           _pemasok = (resP.data['data'] as List).cast<Map<String, dynamic>>();
@@ -98,7 +99,9 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
       final d = res.data['data'] as Map<String, dynamic>;
       if (mounted) {
         setState(() {
-          _peringatanFaktur = d['ada'] == true ? 'Nomor faktur ini sudah pernah dicatat.' : null;
+          _peringatanFaktur = d['ada'] == true
+              ? 'Nomor faktur ini sudah pernah dicatat.'
+              : null;
         });
       }
     } catch (_) {}
@@ -135,13 +138,14 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<int>(
-                value: selectedBarangId,
+                initialValue: selectedBarangId,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Barang'),
                 items: _barang
                     .map((b) => DropdownMenuItem<int>(
                           value: (b['id'] as num).toInt(),
-                          child: Text(b['nama'] as String, overflow: TextOverflow.ellipsis),
+                          child: Text(b['nama'] as String,
+                              overflow: TextOverflow.ellipsis),
                         ))
                     .toList(),
                 onChanged: (v) {
@@ -151,7 +155,9 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
               const SizedBox(height: TokenJarak.j2),
               IsianTeksPos(controller: batchCtrl, label: 'Nomor Batch'),
               const SizedBox(height: TokenJarak.j2),
-              IsianTeksPos(controller: expCtrl, label: 'Tanggal Kedaluwarsa (YYYY-MM-DD)'),
+              IsianTeksPos(
+                  controller: expCtrl,
+                  label: 'Tanggal Kedaluwarsa (YYYY-MM-DD)'),
               const SizedBox(height: TokenJarak.j2),
               IsianTeksPos(
                 controller: jmlCtrl,
@@ -180,7 +186,8 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
     );
 
     if (ok != true) return;
-    final brg = _barang.firstWhere((b) => (b['id'] as num).toInt() == selectedBarangId);
+    final brg =
+        _barang.firstWhere((b) => (b['id'] as num).toInt() == selectedBarangId);
     final jml = int.tryParse(jmlCtrl.text.trim()) ?? 0;
     final harga = parseRupiahInput(hargaCtrl.text);
     if (batchCtrl.text.trim().isEmpty || jml <= 0) return;
@@ -200,8 +207,12 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
   }
 
   Future<void> _simpan() async {
-    if (_pemasokId == null || _fakturCtrl.text.trim().isEmpty || _baris.isEmpty || _fotoPath == null) {
-      setState(() => _pesanGalat = 'Lengkapi pemasok, nomor faktur, minimal 1 barang, dan foto faktur.');
+    if (_pemasokId == null ||
+        _fakturCtrl.text.trim().isEmpty ||
+        _baris.isEmpty ||
+        _fotoPath == null) {
+      setState(() => _pesanGalat =
+          'Lengkapi pemasok, nomor faktur, minimal 1 barang, dan foto faktur.');
       return;
     }
 
@@ -235,7 +246,8 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
         'berkas': await MultipartFile.fromFile(_fotoPath!),
       });
       final upRes = await k.kirim(() => k.dio.post('/lampiran', data: form));
-      final lampiranId = (upRes.data['data'] as Map<String, dynamic>)['id'] as String;
+      final lampiranId =
+          (upRes.data['data'] as Map<String, dynamic>)['id'] as String;
       payload['lampiran_id'] = lampiranId;
 
       await k.kirim(
@@ -265,7 +277,8 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
             );
         if (mounted) {
           setState(() {
-            _pesanSukses = 'Transaksi tertunda. Akan dikirim otomatis saat tersambung.';
+            _pesanSukses =
+                'Transaksi tertunda. Akan dikirim otomatis saat tersambung.';
             _baris.clear();
             _fakturCtrl.clear();
             _fotoPath = null;
@@ -274,11 +287,13 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
         }
       } else if (g.kode == 'BATCH_SUDAH_ADA' && mounted) {
         final idx = (g.detail['indeks'] as num?)?.toInt() ?? 0;
-        final stokBatch = ((g.detail['batch'] as Map?)?['stok'] as num?)?.toInt() ?? 0;
+        final stokBatch =
+            ((g.detail['batch'] as Map?)?['stok'] as num?)?.toInt() ?? 0;
         final gabung = await tampilkanDialogPos<bool>(
           context: context,
           judul: 'Batch Sudah Ada',
-          isi: Text('Batch sudah ada (stok $stokBatch). Tambahkan ke batch ini?'),
+          isi: Text(
+              'Batch sudah ada (stok $stokBatch). Tambahkan ke batch ini?'),
           tombol: [
             TombolPos(
               label: 'Ubah Nomor Batch',
@@ -321,7 +336,7 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
             const SizedBox(height: TokenJarak.j3),
           ],
           DropdownButtonFormField<int>(
-            value: _pemasokId,
+            initialValue: _pemasokId,
             decoration: const InputDecoration(labelText: 'Pemasok (PBF)'),
             items: _pemasok
                 .map((p) => DropdownMenuItem<int>(
@@ -339,11 +354,13 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
             onEditingComplete: _cekFaktur,
           ),
           const SizedBox(height: TokenJarak.j3),
-          IsianTeksPos(controller: _tglFakturCtrl, label: 'Tanggal Faktur (YYYY-MM-DD)'),
+          IsianTeksPos(
+              controller: _tglFakturCtrl, label: 'Tanggal Faktur (YYYY-MM-DD)'),
           const SizedBox(height: TokenJarak.j4),
           Row(
             children: [
-              const Expanded(child: Text('Daftar Barang', style: TokenTipografi.seksi)),
+              const Expanded(
+                  child: Text('Daftar Barang', style: TokenTipografi.seksi)),
               TombolPos(
                 label: 'Tambah',
                 ikon: LucideIcons.plus,
@@ -356,11 +373,13 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
           const SizedBox(height: TokenJarak.j2),
           ..._baris.map((b) {
             final expDt = DateTime.tryParse(b.tanggalKedaluwarsa);
-            final sisaHari = expDt != null ? expDt.difference(DateTime.now()).inDays : 0;
+            final sisaHari =
+                expDt != null ? expDt.difference(DateTime.now()).inDays : 0;
             return ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text('${b.barangNama} (${b.nomorBatch})'),
-              subtitle: Text('${b.jumlah} x ${formatRupiah(b.hargaBeli)} · Sisa $sisaHari hari'),
+              subtitle: Text(
+                  '${b.jumlah} x ${formatRupiah(b.hargaBeli)} · Sisa $sisaHari hari'),
               trailing: Text(
                 formatRupiah(b.jumlah * b.hargaBeli),
                 style: TokenTipografi.angkaTabular(TokenTipografi.dasar),
@@ -369,7 +388,9 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
           }),
           const SizedBox(height: TokenJarak.j4),
           TombolPos(
-            label: _fotoPath == null ? 'Ambil Foto Faktur (Wajib)' : 'Foto Faktur Tersimpan',
+            label: _fotoPath == null
+                ? 'Ambil Foto Faktur (Wajib)'
+                : 'Foto Faktur Tersimpan',
             ikon: LucideIcons.camera,
             jenis: JenisTombol.sekunder,
             onPressed: _ambilFoto,
@@ -379,7 +400,8 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
             Image.file(File(_fotoPath!), height: 120, fit: BoxFit.cover),
           ],
           const SizedBox(height: TokenJarak.j6),
-          TombolPos(label: 'Simpan Penerimaan', memuat: _memuat, onPressed: _simpan),
+          TombolPos(
+              label: 'Simpan Penerimaan', memuat: _memuat, onPressed: _simpan),
         ],
       ),
     );

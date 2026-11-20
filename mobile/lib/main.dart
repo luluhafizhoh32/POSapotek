@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart' as fl;
+import 'package:material_ui/material_ui.dart' as mui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'app/router.dart';
@@ -39,9 +40,10 @@ class _PosApotekAppState extends ConsumerState<PosApotekApp> {
       locale: const Locale('id', 'ID'),
       supportedLocales: const [Locale('id', 'ID')],
       localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+        fl.GlobalMaterialLocalizations.delegate,
+        fl.GlobalWidgetsLocalizations.delegate,
+        fl.GlobalCupertinoLocalizations.delegate,
+        mui.DefaultMaterialLocalizations.delegate,
       ],
       routerConfig: router,
     );

@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
 import '../../../inti/format.dart';
@@ -28,9 +28,13 @@ class _LayarPenggunaState extends ConsumerState<LayarPengguna> {
     setState(() => _memuat = true);
     try {
       final k = ref.read(klienApiProvider);
-      final res = await k.kirim(() => k.dio.get('/pengguna', queryParameters: {'per_halaman': 100}));
-      if (mounted) setState(() => _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
-    } catch (_) {} finally {
+      final res = await k.kirim(
+          () => k.dio.get('/pengguna', queryParameters: {'per_halaman': 100}));
+      if (mounted)
+        setState(() =>
+            _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -52,17 +56,21 @@ class _LayarPenggunaState extends ConsumerState<LayarPengguna> {
           IsianTeksPos(controller: namaCtrl, label: 'Nama Lengkap'),
           const SizedBox(height: TokenJarak.j2),
           DropdownButtonFormField<String>(
-            value: peran,
+            initialValue: peran,
             decoration: const InputDecoration(labelText: 'Peran'),
             items: const [
               DropdownMenuItem(value: 'kasir', child: Text('Kasir')),
-              DropdownMenuItem(value: 'staf_gudang', child: Text('Staf Gudang')),
+              DropdownMenuItem(
+                  value: 'staf_gudang', child: Text('Staf Gudang')),
               DropdownMenuItem(value: 'apa', child: Text('Apoteker')),
             ],
             onChanged: (v) => peran = v ?? 'kasir',
           ),
           const SizedBox(height: TokenJarak.j2),
-          IsianTeksPos(controller: sandiCtrl, label: 'Kata Sandi Awal', sembunyikan: true),
+          IsianTeksPos(
+              controller: sandiCtrl,
+              label: 'Kata Sandi Awal',
+              sembunyikan: true),
         ],
       ),
       tombol: [
@@ -97,7 +105,8 @@ class _LayarPenggunaState extends ConsumerState<LayarPengguna> {
       appBar: AppBar(
         title: const Text('Pengguna'),
         actions: [
-          IconButton(icon: const Icon(LucideIcons.plus), onPressed: _tambahPengguna),
+          IconButton(
+              icon: const Icon(LucideIcons.plus), onPressed: _tambahPengguna),
         ],
       ),
       body: _memuat
@@ -122,7 +131,8 @@ class _LayarPenggunaState extends ConsumerState<LayarPengguna> {
                             final k = ref.read(klienApiProvider);
                             if (aksi == 'toggle') {
                               await k.kirim(
-                                () => k.dio.post('/pengguna/$id/${aktif ? 'nonaktifkan' : 'aktifkan'}'),
+                                () => k.dio.post(
+                                    '/pengguna/$id/${aktif ? 'nonaktifkan' : 'aktifkan'}'),
                               );
                               await _muat();
                             } else if (aksi == 'reset') {
@@ -149,7 +159,9 @@ class _LayarPenggunaState extends ConsumerState<LayarPengguna> {
                                       try {
                                         await k.kirim(() => k.dio.post(
                                               '/pengguna/$id/reset-sandi',
-                                              data: {'kata_sandi_baru': ctrl.text},
+                                              data: {
+                                                'kata_sandi_baru': ctrl.text
+                                              },
                                             ));
                                         if (mounted) Navigator.pop(context);
                                       } on GalatApi catch (_) {}
@@ -194,9 +206,13 @@ class _LayarJejakAuditState extends ConsumerState<LayarJejakAudit> {
     Future.microtask(() async {
       try {
         final k = ref.read(klienApiProvider);
-        final res = await k.kirim(() => k.dio.get('/jejak-audit', queryParameters: {'per_halaman': 50}));
-        if (mounted) setState(() => _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
-      } catch (_) {} finally {
+        final res = await k.kirim(() =>
+            k.dio.get('/jejak-audit', queryParameters: {'per_halaman': 50}));
+        if (mounted)
+          setState(() => _daftar =
+              (res.data['data'] as List).cast<Map<String, dynamic>>());
+      } catch (_) {
+      } finally {
         if (mounted) setState(() => _memuat = false);
       }
     });

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
@@ -38,7 +38,8 @@ class _LayarPengaturanState extends ConsumerState<LayarPengaturan> {
       _tglLapCtrl.text = '${d['laporan_bulanan_tanggal']}';
       _kepalaCtrl.text = (d['kepala_struk'] ?? '') as String;
       _kakiCtrl.text = (d['kaki_struk'] ?? '') as String;
-    } catch (_) {} finally {
+    } catch (_) {
+    } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
@@ -48,8 +49,10 @@ class _LayarPengaturanState extends ConsumerState<LayarPengaturan> {
       final k = ref.read(klienApiProvider);
       await k.kirim(() => k.dio.put('/pengaturan', data: {
             'nama': _namaCtrl.text.trim(),
-            'batas_near_expired_hari': int.tryParse(_batasCtrl.text.trim()) ?? 90,
-            'laporan_bulanan_tanggal': int.tryParse(_tglLapCtrl.text.trim()) ?? 3,
+            'batas_near_expired_hari':
+                int.tryParse(_batasCtrl.text.trim()) ?? 90,
+            'laporan_bulanan_tanggal':
+                int.tryParse(_tglLapCtrl.text.trim()) ?? 3,
             'kepala_struk': _kepalaCtrl.text.trim(),
             'kaki_struk': _kakiCtrl.text.trim(),
           }));
