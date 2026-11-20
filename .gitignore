@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+backend/.env
+data/
+*.log
+.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies

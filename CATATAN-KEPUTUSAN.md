@@ -1,11 +1,7 @@
-# CATATAN KEPUTUSAN ARSITEKTUR & IMPLEMENTASI
-Aplikasi POS Apotek KADIN Bengkalis
+# Catatan Keputusan
 
-Dokumen ini mencatat keputusan-keputusan teknis, resolusi aturan yang lebih ketat, atau penanganan celah keamanan/integritas sesuai panduan CLAUDE.md.
+Dokumen ini mencatat keputusan implementasi apabila terdapat celah atau penafsiran pada spesifikasi.
 
----
-
-### [2026-11-19] Inisialisasi Proyek & Fase 0
-- **Penetapan Tumpukan**: Migrasi dari struktur prototipe lama (NestJS + MySQL/Prisma) ke spesifikasi tunggal KADIN Bengkalis: Fastify + TypeScript + PostgreSQL 16 (RLS, raw parameterized SQL) + Flutter Mobile (Android).
-- **Konvensi Eksekusi Perintah di Windows**: Karena pembatasan eksekusi skrip PowerShell lokal (`ExecutionPolicy`), pemanggilan npm/npx menggunakan `npm.cmd` dan `npx.cmd`.
-- **Inisialisasi Git**: Menginisialisasi repositori Git lokal untuk melacak commit berurutan per fase (`fase-0: ...` dst.).
+## 2026-11-20 — Fase 0
+- **Migrasi SQL & `node-pg-migrate`**: Skema SQL murni ditempatkan di `backend/migrations/0001_skema.sql`, `0002_pengaman.sql`, dan `0003_fungsi.sql`, dijalankan menggunakan `node-pg-migrate` dengan `DATABASE_URL_MIGRATOR`.
+- **Akun `pemilik` pada CLI `apotek:buat`**: Karena tabel `apotek` dan `pengguna` tidak menggunakan RLS, sedangkan `pengaturan_apotek` dan `akun` menggunakan RLS, pembuatan apotek baru pada `apotek:buat` dilakukan dalam satu transaksi: menyisipkan `apotek`, menetapkan `set_config('app.apotek_id', ...)`, lalu menyisipkan `pengaturan_apotek`, 18 akun awal, dan `pengguna` pemilik.
