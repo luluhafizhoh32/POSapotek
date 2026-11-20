@@ -22,6 +22,9 @@ import { ruteAkuntansi } from './modul/akuntansi/rute.js';
 import { rutePembayaran } from './modul/pembayaran/rute.js';
 import { rutePenjualan } from './modul/penjualan/rute.js';
 import { rutePenerimaan } from './modul/penerimaan/rute.js';
+import { ruteOpname } from './modul/opname/rute.js';
+import { rutePengajuan } from './modul/pengajuan/rute.js';
+import { ruteNearExpired } from './modul/nearExpired/rute.js';
 
 export async function bangunServer(): Promise<FastifyInstance> {
   const env = getEnv();
@@ -136,6 +139,9 @@ export async function bangunServer(): Promise<FastifyInstance> {
       await api.register(rutePembayaran);
       await api.register(rutePenjualan);
       await api.register(rutePenerimaan);
+      await api.register(ruteOpname);
+      await api.register(rutePengajuan);
+      await api.register(ruteNearExpired);
     },
     { prefix: '/api/v1' },
   );
