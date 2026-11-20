@@ -1,5 +1,4 @@
 import { DateTime } from 'luxon';
-import { getEnv } from '../config/env.js';
 
 export const ZONA_BISNIS = 'Asia/Jakarta';
 
@@ -13,9 +12,8 @@ export const Jam = {
     if (_jamOverride) {
       return _jamOverride;
     }
-    const env = getEnv();
-    if (env.NODE_ENV === 'test' && env.JAM_UJI) {
-      const parsed = DateTime.fromISO(env.JAM_UJI, { zone: ZONA_BISNIS });
+    if (process.env['NODE_ENV'] === 'test' && process.env['JAM_UJI']) {
+      const parsed = DateTime.fromISO(process.env['JAM_UJI'], { zone: ZONA_BISNIS });
       if (parsed.isValid) {
         return parsed;
       }
@@ -68,7 +66,7 @@ export const Jam = {
    * Hanya untuk pengujian: mengatur waktu tetap.
    */
   atur(isoAtauDate: string | Date | DateTime): void {
-    if (getEnv().NODE_ENV !== 'test') {
+    if (process.env['NODE_ENV'] !== 'test') {
       throw new Error('Jam.atur hanya boleh dipanggil saat NODE_ENV=test');
     }
     if (typeof isoAtauDate === 'string') {
