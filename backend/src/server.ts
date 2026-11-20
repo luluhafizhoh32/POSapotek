@@ -9,6 +9,12 @@ import path from 'node:path';
 import { getEnv } from './config/env.js';
 import { getPool, tutupSemuaPool } from './db/pool.js';
 import { GalatAplikasi } from './lib/galat.js';
+import { ruteAuth } from './modul/auth/rute.js';
+import { rutePengguna } from './modul/pengguna/rute.js';
+import { rutePengaturan } from './modul/pengaturan/rute.js';
+import { ruteNotifikasi } from './modul/notifikasi/rute.js';
+import { rutePantau } from './modul/pantau/rute.js';
+import { ruteRingkasan } from './modul/ringkasan/rute.js';
 
 export async function bangunServer(): Promise<FastifyInstance> {
   const env = getEnv();
@@ -38,7 +44,7 @@ export async function bangunServer(): Promise<FastifyInstance> {
   await app.register(rateLimit, {
     max: 300,
     timeWindow: '1 minute',
-    errorResponseBuilder: () => new GalatAplikasi('TERLALU_BANYAK_PERMINTAAN').keJson(),
+    errorResponseBuilder: () => new GalatAplikasi('TERLALU_BANYAK_PERMINTAAN'),
   });
 
   await app.register(multipart, {
@@ -109,6 +115,13 @@ export async function bangunServer(): Promise<FastifyInstance> {
           });
         }
       });
+
+      await api.register(ruteAuth);
+      await api.register(rutePengguna);
+      await api.register(rutePengaturan);
+      await api.register(ruteNotifikasi);
+      await api.register(rutePantau);
+      await api.register(ruteRingkasan);
     },
     { prefix: '/api/v1' },
   );
