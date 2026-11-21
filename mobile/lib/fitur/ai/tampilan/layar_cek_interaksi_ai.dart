@@ -17,10 +17,26 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
   final _pasienCtrl = TextEditingController(text: 'Budi Santoso, 52 th');
   final _dokterCtrl = TextEditingController(text: 'dr. Rina Kusuma, Sp.PD');
   final _obatInputCtrl = TextEditingController();
-  final List<String> _daftarObat = [
-    'Simvastatin 20 mg',
-    'Klaritromisin 500 mg',
-    'Amlodipin 5 mg',
+  final List<({String nama, String dosis, String jumlah, bool keras})>
+      _daftarObat = [
+    (
+      nama: 'Simvastatin 20 mg',
+      dosis: '1×1 malam hari',
+      jumlah: '30 tab',
+      keras: true,
+    ),
+    (
+      nama: 'Klaritromisin 500 mg',
+      dosis: '2×1 sesudah makan',
+      jumlah: '14 tab',
+      keras: true,
+    ),
+    (
+      nama: 'Amlodipin 5 mg',
+      dosis: '1×1 pagi hari',
+      jumlah: '30 tab',
+      keras: true,
+    ),
   ];
 
   bool _memuat = false;
@@ -40,7 +56,12 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
     final teks = _obatInputCtrl.text.trim();
     if (teks.isEmpty) return;
     setState(() {
-      _daftarObat.add(teks);
+      _daftarObat.add((
+        nama: teks,
+        dosis: 'Sesuai anjuran dokter',
+        jumlah: '10 tab',
+        keras: true,
+      ));
       _obatInputCtrl.clear();
       _hasil = null;
       _terverifikasi = false;
@@ -63,7 +84,7 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
         () => k.dio.post(
           '/ai/cek-interaksi',
           data: {
-            'daftar_obat': _daftarObat,
+            'daftar_obat': _daftarObat.map((e) => e.nama).toList(),
             'nama_pasien': _pasienCtrl.text.trim(),
             'dokter': _dokterCtrl.text.trim(),
           },
@@ -74,8 +95,8 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
       }
     } catch (_) {
       if (mounted) {
-        setState(
-            () => _galat = 'Gagal memeriksa interaksi obat. Periksa koneksi.');
+        setState(() => _galat =
+            'Gagal memeriksa interaksi obat. Pastikan server backend aktif.');
       }
     } finally {
       if (mounted) setState(() => _memuat = false);
@@ -90,60 +111,84 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
     return Scaffold(
       appBar: const AppBarPharma(
         peranLabel: 'APOTEKER',
-        subjudul: 'AI Drug Safety Checker',
+        subjudul: 'Resep Dokter & AI Safety',
       ),
       body: ListView(
         padding: const EdgeInsets.all(TokenJarak.j4),
         children: [
+          // Header Resep Dokter seperti di video
           Container(
             padding: const EdgeInsets.all(TokenJarak.j4),
             decoration: BoxDecoration(
-              color: WarnaMentah.ai50,
-              borderRadius: BorderRadius.circular(TokenRadius.sedang),
-              border: Border.all(color: WarnaMentah.ai100),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: TokenGaris.pemisah),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0A064E3B),
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(LucideIcons.sparkles,
-                    color: WarnaMentah.ai600, size: 24),
-                const SizedBox(width: TokenJarak.j3),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Deteksi Interaksi Obat Berbasis AI',
-                        style: TokenTipografi.dasar.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: WarnaMentah.ai700,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Resep Dokter', style: TokenTipografi.seksi),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _terverifikasi
+                            ? TokenStatus.berhasilLatar
+                            : TokenStatus.peringatanLatar,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _terverifikasi
+                            ? '✓ Terverifikasi'
+                            : 'Menunggu Verifikasi',
+                        style: TokenTipografi.keterangan.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: _terverifikasi
+                              ? TokenStatus.berhasilTeks
+                              : TokenStatus.peringatanTeks,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Memeriksa kombinasi resep sebelum diserahkan — keputusan akhir tetap di tangan Apoteker.',
-                        style: TokenTipografi.keterangan,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: TokenJarak.j3),
+                IsianTeksPos(
+                    controller: _dokterCtrl, label: 'Dokter Penulis Resep'),
+                const SizedBox(height: TokenJarak.j2),
+                IsianTeksPos(controller: _pasienCtrl, label: 'Pasien'),
               ],
             ),
           ),
           const SizedBox(height: TokenJarak.j4),
-          IsianTeksPos(controller: _dokterCtrl, label: 'Dokter Penulis Resep'),
-          const SizedBox(height: TokenJarak.j3),
-          IsianTeksPos(controller: _pasienCtrl, label: 'Pasien'),
-          const SizedBox(height: TokenJarak.j4),
-          Text('Daftar Obat Resep (${_daftarObat.length})',
-              style: TokenTipografi.seksi),
+
+          // Daftar Obat Resep
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Daftar Obat (${_daftarObat.length} item)',
+                  style: TokenTipografi.dasar
+                      .copyWith(fontWeight: FontWeight.w700)),
+              Text('No. Resep: R-2458', style: TokenTipografi.keterangan),
+            ],
+          ),
           const SizedBox(height: TokenJarak.j2),
           Row(
             children: [
               Expanded(
                 child: IsianTeksPos(
                   controller: _obatInputCtrl,
-                  label: 'Tambah Obat',
-                  placeholder: 'cth: Warfarin 2 mg',
+                  label: 'Tambah Obat ke Resep',
+                  placeholder: 'cth: Warfarin 2 mg / Ibuprofen',
                 ),
               ),
               const SizedBox(width: TokenJarak.j2),
@@ -159,42 +204,82 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
             ],
           ),
           const SizedBox(height: TokenJarak.j3),
-          ..._daftarObat.asMap().entries.map((e) => Container(
-                margin: const EdgeInsets.only(bottom: TokenJarak.j2),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: TokenJarak.j3,
-                  vertical: TokenJarak.j2,
-                ),
-                decoration: BoxDecoration(
-                  color: TokenLatar.latar,
-                  borderRadius: BorderRadius.circular(TokenRadius.kecil),
-                  border: Border.all(color: TokenGaris.pemisah),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(LucideIcons.pill,
-                        size: 18, color: TokenAksi.utama),
-                    const SizedBox(width: TokenJarak.j2),
-                    Expanded(child: Text(e.value, style: TokenTipografi.dasar)),
-                    IconButton(
-                      icon: const Icon(LucideIcons.x, size: 18),
-                      onPressed: () {
-                        setState(() {
-                          _daftarObat.removeAt(e.key);
-                          _hasil = null;
-                        });
-                      },
+          ..._daftarObat.asMap().entries.map((e) {
+            final item = e.value;
+            return Container(
+              margin: const EdgeInsets.only(bottom: TokenJarak.j2),
+              padding: const EdgeInsets.symmetric(
+                horizontal: TokenJarak.j3,
+                vertical: TokenJarak.j3,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: TokenGaris.pemisah),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: item.keras
+                          ? TokenStatus.bahayaTeks
+                          : TokenAksi.utama,
+                      shape: BoxShape.circle,
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                  const SizedBox(width: TokenJarak.j3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item.nama,
+                            style: TokenTipografi.dasar
+                                .copyWith(fontWeight: FontWeight.w600)),
+                        Text(item.dosis, style: TokenTipografi.keterangan),
+                      ],
+                    ),
+                  ),
+                  Text(item.jumlah,
+                      style: TokenTipografi.tabel.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: TokenTeks.sekunder)),
+                  IconButton(
+                    icon: const Icon(LucideIcons.x, size: 18),
+                    onPressed: () {
+                      setState(() {
+                        _daftarObat.removeAt(e.key);
+                        _hasil = null;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            );
+          }),
           const SizedBox(height: TokenJarak.j3),
           if (_galat != null) ...[
             PesanPos(jenis: JenisPesan.bahaya, teks: _galat!),
             const SizedBox(height: TokenJarak.j3),
           ],
-          SizedBox(
-            height: TokenUkuran.tinggiTombol,
+
+          // Tombol Ungu Gradient Cek Interaksi AI seperti di video
+          Container(
+            height: 50,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF7C3AED), Color(0xFF6D28D9)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x337C3AED),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
             child: ElevatedButton.icon(
               onPressed: _memuat ? null : _cekInteraksi,
               icon: _memuat
@@ -203,104 +288,191 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: TokenTeks.diUtama,
+                        color: Colors.white,
                       ),
                     )
-                  : const Icon(LucideIcons.sparkles),
-              label: const Text('Cek Interaksi AI'),
+                  : const Icon(LucideIcons.sparkles, color: Colors.white),
+              label: const Text(
+                'Cek Interaksi AI',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: WarnaMentah.ai600,
-                foregroundColor: TokenTeks.diUtama,
-                elevation: 0,
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(TokenRadius.kecil),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
           ),
+
+          // Panel Hasil AI Drug Safety Checker (Kartu Ungu seperti video)
           if (_hasil != null) ...[
             const SizedBox(height: TokenJarak.j4),
-            if (peringatan.isEmpty)
-              PesanPos(
-                jenis: JenisPesan.berhasil,
-                teks: _hasil!['catatan_klinis'] as String,
-              )
-            else ...[
-              PesanPos(
-                jenis: JenisPesan.peringatan,
-                teks:
-                    'Ditemukan ${peringatan.length} potensi interaksi obat! Periksa detail klinis di bawah.',
-              ),
-              const SizedBox(height: TokenJarak.j3),
-              ...peringatan.map((p) {
-                final tinggi = p['tingkat'] == 'tinggi';
-                return Container(
-                  margin: const EdgeInsets.only(bottom: TokenJarak.j3),
-                  padding: const EdgeInsets.all(TokenJarak.j4),
-                  decoration: BoxDecoration(
-                    color: tinggi
-                        ? TokenStatus.bahayaLatar
-                        : TokenStatus.peringatanLatar,
-                    borderRadius: BorderRadius.circular(TokenRadius.sedang),
-                    border: Border.all(
-                      color: tinggi
-                          ? TokenStatus.bahayaTeks
-                          : TokenStatus.peringatanTeks,
-                    ),
+            Container(
+              padding: const EdgeInsets.all(TokenJarak.j4),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF7C3AED), Color(0xFF5B21B6)],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x2E7C3AED),
+                    blurRadius: 16,
+                    offset: Offset(0, 6),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            LucideIcons.alertTriangle,
-                            size: 18,
-                            color: tinggi
-                                ? TokenStatus.bahayaTeks
-                                : TokenStatus.peringatanTeks,
+                      const Icon(LucideIcons.sparkles,
+                          color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'AI Drug Safety Checker',
+                          style: TokenTipografi.dasar.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
                           ),
-                          const SizedBox(width: TokenJarak.j2),
-                          Expanded(
-                            child: Text(
-                              p['judul'] as String,
-                              style: TokenTipografi.dasar.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: tinggi
-                                    ? TokenStatus.bahayaTeks
-                                    : TokenStatus.peringatanTeks,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                      const SizedBox(height: TokenJarak.j2),
-                      Text(p['mekanisme'] as String,
-                          style: TokenTipografi.tabel),
-                      const SizedBox(height: TokenJarak.j2),
                       Text(
-                        'Saran: ${p['saran']}',
+                        '100%',
                         style: TokenTipografi.tabel.copyWith(
-                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
-                );
-              }),
-            ],
-            const SizedBox(height: TokenJarak.j3),
-            if (_terverifikasi)
-              const PesanPos(
-                jenis: JenisPesan.berhasil,
-                teks: 'Resep telah diverifikasi oleh Apoteker Penanggung Jawab.',
-              )
-            else
-              TombolPos(
-                label: 'Verifikasi Apoteker',
-                ikon: LucideIcons.checkCircle2,
-                onPressed: () => setState(() => _terverifikasi = true),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: const LinearProgressIndicator(
+                      value: 1.0,
+                      minHeight: 6,
+                      backgroundColor: Color(0x40FFFFFF),
+                      color: Color(0xFF34D399),
+                    ),
+                  ),
+                  const SizedBox(height: TokenJarak.j3),
+                  if (peringatan.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(TokenJarak.j3),
+                      decoration: BoxDecoration(
+                        color: TokenStatus.berhasilLatar,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _hasil!['catatan_klinis'] as String,
+                        style: TokenTipografi.tabel.copyWith(
+                          color: TokenStatus.berhasilTeks,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                  else
+                    ...peringatan.map((p) {
+                      final tinggi = p['tingkat'] == 'tinggi';
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: TokenJarak.j2),
+                        padding: const EdgeInsets.all(TokenJarak.j3),
+                        decoration: BoxDecoration(
+                          color: tinggi
+                              ? const Color(0xFFFEF3C7)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  LucideIcons.alertTriangle,
+                                  size: 16,
+                                  color: tinggi
+                                      ? TokenStatus.bahayaTeks
+                                      : TokenStatus.peringatanTeks,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'INTERAKSI ${(p['tingkat'] as String).toUpperCase()}: ${p['judul']}',
+                                    style: TokenTipografi.tabel.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: tinggi
+                                          ? TokenStatus.bahayaTeks
+                                          : TokenStatus.peringatanTeks,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(p['mekanisme'] as String,
+                                style: TokenTipografi.keterangan
+                                    .copyWith(color: TokenTeks.utama)),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Saran: ${p['saran']}',
+                              style: TokenTipografi.keterangan.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: TokenTeks.utama,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  const SizedBox(height: TokenJarak.j2),
+                  if (_terverifikasi)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: TokenStatus.berhasilTeks, width: 2),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            '✓ VERIFIKASI APOTEKER',
+                            style: TokenTipografi.dasar.copyWith(
+                              color: TokenStatus.berhasilTeks,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          Text(
+                            'Saran klinis diterapkan · Resep siap diserahkan',
+                            style: TokenTipografi.keterangan,
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    TombolPos(
+                      label: 'Verifikasi Apoteker',
+                      ikon: LucideIcons.checkCircle2,
+                      onPressed: () => setState(() => _terverifikasi = true),
+                    ),
+                ],
               ),
+            ),
           ],
         ],
       ),

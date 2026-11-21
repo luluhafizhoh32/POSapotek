@@ -83,26 +83,7 @@ class _LayarMasukState extends ConsumerState<LayarMasuk> {
               ),
               child: Column(
                 children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x33000000),
-                          blurRadius: 16,
-                          offset: Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      LucideIcons.plus,
-                      color: WarnaMentah.utama600,
-                      size: 38,
-                    ),
-                  ),
+                  const LogoPharmaPos(ukuran: 68, terbalik: true),
                   const SizedBox(height: 14),
                   Text(
                     'PharmaPOS',

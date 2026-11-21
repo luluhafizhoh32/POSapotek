@@ -244,28 +244,30 @@ export async function ruteAi(app: FastifyInstance): Promise<void> {
           stok_total: string;
           terjual_30h: string;
         }>(
-          `SELECT
-             b.id::text,
-             b.nama,
-             b.satuan,
-             COALESCE((SELECT SUM(bb.stok) FROM batch_barang bb WHERE bb.barang_id = b.id), 0)::text AS stok_total,
-             COALESCE((
-               SELECT SUM(bp.jumlah)
-               FROM baris_penjualan bp
-               JOIN penjualan p ON p.id = bp.penjualan_id
-               WHERE bp.barang_id = b.id
-                 AND (p.waktu AT TIME ZONE 'Asia/Jakarta')::date >= ($1::date - INTERVAL '30 days')
-             ), 0)::text AS terjual_30h
-           FROM barang b
-           WHERE b.aktif = true
-           ORDER BY terjual_30h::int DESC, b.id ASC
+          `SELECT * FROM (
+             SELECT
+               b.id::text AS id,
+               b.nama,
+               b.satuan,
+               COALESCE((SELECT SUM(bb.stok) FROM batch_barang bb WHERE bb.barang_id = b.id), 0)::text AS stok_total,
+               COALESCE((
+                 SELECT SUM(bp.jumlah)
+                 FROM baris_penjualan bp
+                 JOIN penjualan p ON p.id = bp.penjualan_id
+                 WHERE bp.barang_id = b.id
+                   AND (p.waktu AT TIME ZONE 'Asia/Jakarta')::date >= ($1::date - INTERVAL '30 days')
+               ), 0) AS terjual_30h_num
+             FROM barang b
+             WHERE b.aktif = true
+           ) sub
+           ORDER BY sub.terjual_30h_num DESC, sub.id::bigint ASC
            LIMIT 6`,
           [hariIni],
         );
 
         const forecast = forecastRes.rows.map((r, idx) => {
           const stok = Number(r.stok_total);
-          const terjual30 = Number(r.terjual_30h);
+          const terjual30 = Number((r as unknown as { terjual_30h_num: string | number }).terjual_30h_num ?? 0);
           // Proyeksi permintaan mingguan (dengan faktor tren musiman +15% pada item terlaris)
           const dasarMingguan = terjual30 > 0 ? Math.ceil((terjual30 / 30) * 7) : Math.max(8, 18 - idx * 2);
           const perubahanPersen = idx === 0 ? 18 : idx === 1 ? 12 : idx === 2 ? 7 : -4;

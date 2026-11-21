@@ -4,6 +4,75 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../inti/format.dart';
 import 'token.dart';
 
+/// Logo resmi PharmaPOS (kotak squircle emerald dengan palang medis putih tebal seperti video).
+class LogoPharmaPos extends StatelessWidget {
+  final double ukuran;
+  final bool terbalik;
+
+  const LogoPharmaPos({
+    super.key,
+    this.ukuran = 44,
+    this.terbalik = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tebal = ukuran * 0.19;
+    final panjang = ukuran * 0.52;
+    final warnaPalang = terbalik ? WarnaMentah.utama600 : Colors.white;
+
+    return Container(
+      width: ukuran,
+      height: ukuran,
+      decoration: BoxDecoration(
+        gradient: terbalik
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF10B981), Color(0xFF047857)],
+              ),
+        color: terbalik ? Colors.white : null,
+        borderRadius: BorderRadius.circular(ukuran * 0.28),
+        boxShadow: [
+          BoxShadow(
+            color: terbalik ? const Color(0x2B000000) : const Color(0x40059669),
+            blurRadius: ukuran * 0.25,
+            offset: Offset(0, ukuran * 0.1),
+          ),
+        ],
+      ),
+      child: Center(
+        child: SizedBox(
+          width: panjang,
+          height: panjang,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: panjang,
+                height: tebal,
+                decoration: BoxDecoration(
+                  color: warnaPalang,
+                  borderRadius: BorderRadius.circular(tebal * 0.25),
+                ),
+              ),
+              Container(
+                width: tebal,
+                height: panjang,
+                decoration: BoxDecoration(
+                  color: warnaPalang,
+                  borderRadius: BorderRadius.circular(tebal * 0.25),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Header Gradient PharmaPOS dengan logo + badge peran (KASIR / APOTEKER / GUDANG / OWNER).
 class AppBarPharma extends StatelessWidget implements PreferredSizeWidget {
   final String peranLabel;
@@ -44,26 +113,7 @@ class AppBarPharma extends StatelessWidget implements PreferredSizeWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x26000000),
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  LucideIcons.plus,
-                  color: WarnaMentah.utama600,
-                  size: 22,
-                ),
-              ),
+              const LogoPharmaPos(ukuran: 36, terbalik: true),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(

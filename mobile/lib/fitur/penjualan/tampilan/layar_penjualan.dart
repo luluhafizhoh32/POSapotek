@@ -61,6 +61,7 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
   final List<ItemKeranjang> _keranjang = [];
   List<ItemBarangPos> _hasilCari = [];
   String _filterGolongan = 'semua';
+  bool _pelangganMember = false;
   String _kunciIdempoten = const Uuid().v4();
   Timer? _debouncePratinjau;
   bool _sedangOfflineEstimasi = false;
@@ -247,86 +248,160 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
 
     if (_hasilBerhasil != null || _tertundaTerakhir) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Penjualan')),
-        body: Padding(
+        appBar: const AppBarPharma(
+          peranLabel: 'KASIR',
+          subjudul: 'Konfirmasi Transaksi',
+        ),
+        body: SingleChildScrollView(
           padding: const EdgeInsets.all(TokenJarak.j4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_tertundaTerakhir) ...[
-                const PesanPos(
-                  jenis: JenisPesan.informasi,
-                  teks:
-                      'Transaksi tertunda. Akan dikirim otomatis saat tersambung.',
+          child: Container(
+            padding: const EdgeInsets.all(TokenJarak.j5),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: TokenGaris.pemisah),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x12064E3B),
+                  blurRadius: 18,
+                  offset: Offset(0, 6),
                 ),
-                const SizedBox(height: TokenJarak.j4),
-                Text(
-                  formatRupiah(_totalTertunda),
-                  style: TokenTipografi.angkaTabular(TokenTipografi.ringkasan),
-                ),
-                const SizedBox(height: TokenJarak.j6),
-                TombolPos(
-                  label: printerMac == null
-                      ? 'Printer belum dipilih'
-                      : 'Cetak Bukti Sementara',
-                  jenis: JenisTombol.sekunder,
-                  onPressed: printerMac == null
-                      ? null
-                      : () => ref.read(pencetakProvider).cetakBuktiSementara(
-                            baris: _barisTertunda,
-                            total: _totalTertunda,
-                            alamatMac: printerMac,
-                          ),
-                ),
-              ] else if (_hasilBerhasil != null) ...[
-                const PesanPos(
-                    jenis: JenisPesan.berhasil,
-                    teks: 'Penjualan berhasil disimpan.'),
-                const SizedBox(height: TokenJarak.j4),
-                Text('Nomor: ${_hasilBerhasil!.nomor}',
-                    style: TokenTipografi.seksi),
-                const SizedBox(height: TokenJarak.j2),
-                Text(
-                  'Total: ${formatRupiah(_hasilBerhasil!.total)}',
-                  style: TokenTipografi.angkaTabular(TokenTipografi.judul),
-                ),
-                if (_hasilBerhasil!.kembalian != null) ...[
-                  const SizedBox(height: TokenJarak.j2),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_tertundaTerakhir) ...[
+                  const PesanPos(
+                    jenis: JenisPesan.informasi,
+                    teks:
+                        'Transaksi tertunda. Akan dikirim otomatis saat tersambung.',
+                  ),
+                  const SizedBox(height: TokenJarak.j4),
                   Text(
-                    'Kembalian: ${formatRupiah(_hasilBerhasil!.kembalian!)}',
+                    formatRupiah(_totalTertunda),
+                    textAlign: TextAlign.center,
                     style:
                         TokenTipografi.angkaTabular(TokenTipografi.ringkasan),
                   ),
+                  const SizedBox(height: TokenJarak.j5),
+                  TombolPos(
+                    label: printerMac == null
+                        ? 'Printer belum dipilih'
+                        : 'Cetak Bukti Sementara',
+                    jenis: JenisTombol.sekunder,
+                    onPressed: printerMac == null
+                        ? null
+                        : () =>
+                            ref.read(pencetakProvider).cetakBuktiSementara(
+                                  baris: _barisTertunda,
+                                  total: _totalTertunda,
+                                  alamatMac: printerMac,
+                                ),
+                  ),
+                ] else if (_hasilBerhasil != null) ...[
+                  Center(
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: const BoxDecoration(
+                        color: TokenStatus.berhasilLatar,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        LucideIcons.checkCircle2,
+                        size: 36,
+                        color: TokenStatus.berhasilTeks,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: TokenJarak.j3),
+                  const Text(
+                    'Penjualan berhasil disimpan.',
+                    textAlign: TextAlign.center,
+                    style: TokenTipografi.seksi,
+                  ),
+                  const SizedBox(height: TokenJarak.j2),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: TokenStatus.berhasilLatar,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '✓ Stok FEFO otomatis dikurangi',
+                        style: TokenTipografi.keterangan.copyWith(
+                          color: TokenStatus.berhasilTeks,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: TokenJarak.j4),
+                  Container(
+                    padding: const EdgeInsets.all(TokenJarak.j3),
+                    decoration: BoxDecoration(
+                      color: TokenLatar.halaman,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Nomor: ${_hasilBerhasil!.nomor}',
+                            style: TokenTipografi.dasar
+                                .copyWith(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: TokenJarak.j1),
+                        Text(
+                          'Total: ${formatRupiah(_hasilBerhasil!.total)}',
+                          style: TokenTipografi.angkaTabular(
+                                  TokenTipografi.judul)
+                              .copyWith(color: TokenAksi.utama),
+                        ),
+                        if (_hasilBerhasil!.kembalian != null) ...[
+                          const SizedBox(height: TokenJarak.j1),
+                          Text(
+                            'Kembalian: ${formatRupiah(_hasilBerhasil!.kembalian!)}',
+                            style: TokenTipografi.angkaTabular(
+                                    TokenTipografi.seksi)
+                                .copyWith(color: TokenStatus.berhasilTeks),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: TokenJarak.j5),
+                  TombolPos(
+                    label: printerMac == null
+                        ? 'Printer belum dipilih'
+                        : 'Cetak Struk',
+                    ikon: LucideIcons.printer,
+                    onPressed: printerMac == null
+                        ? null
+                        : () async {
+                            final struk = await ref
+                                .read(penjualanRepositoriProvider)
+                                .ambilStruk(_hasilBerhasil!.id);
+                            await ref
+                                .read(pencetakProvider)
+                                .cetakStruk(struk, printerMac);
+                          },
+                  ),
                 ],
-                const SizedBox(height: TokenJarak.j6),
+                const SizedBox(height: TokenJarak.j3),
                 TombolPos(
-                  label: printerMac == null
-                      ? 'Printer belum dipilih'
-                      : 'Cetak Struk',
-                  onPressed: printerMac == null
-                      ? null
-                      : () async {
-                          final struk = await ref
-                              .read(penjualanRepositoriProvider)
-                              .ambilStruk(_hasilBerhasil!.id);
-                          await ref
-                              .read(pencetakProvider)
-                              .cetakStruk(struk, printerMac);
-                        },
+                  label: 'Transaksi Baru',
+                  jenis: JenisTombol.sekunder,
+                  onPressed: () {
+                    setState(() {
+                      _hasilBerhasil = null;
+                      _tertundaTerakhir = false;
+                    });
+                  },
                 ),
               ],
-              const SizedBox(height: TokenJarak.j3),
-              TombolPos(
-                label: 'Transaksi Baru',
-                jenis: JenisTombol.sekunder,
-                onPressed: () {
-                  setState(() {
-                    _hasilBerhasil = null;
-                    _tertundaTerakhir = false;
-                  });
-                },
-              ),
-            ],
+            ),
           ),
         ),
       );
@@ -406,7 +481,26 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
               padding: const EdgeInsets.symmetric(horizontal: TokenJarak.j3),
               children: [
                 if (_keranjang.isNotEmpty) ...[
-                  Text('Keranjang', style: TokenTipografi.seksi),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Keranjang (${_keranjang.length})',
+                          style: TokenTipografi.seksi),
+                      ActionChip(
+                        avatar: Icon(
+                          _pelangganMember
+                              ? LucideIcons.userCheck
+                              : LucideIcons.userPlus,
+                          size: 16,
+                          color: TokenAksi.utama,
+                        ),
+                        label: Text(
+                            _pelangganMember ? 'Member Aktif' : '+ Member'),
+                        onPressed: () => setState(
+                            () => _pelangganMember = !_pelangganMember),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: TokenJarak.j2),
                   ...List.generate(_keranjang.length, (i) {
                     final item = _keranjang[i];

@@ -40,8 +40,11 @@ class LayarPenerimaan extends ConsumerStatefulWidget {
 }
 
 class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
+  int _tabGudang = 0; // 0: Stok Obat, 1: Urutan FEFO, 2: Penerimaan PO
   List<Map<String, dynamic>> _pemasok = [];
   List<Map<String, dynamic>> _barang = [];
+  List<Map<String, dynamic>> _fefoList = [];
+  bool _kondisiSesuai = true;
   int? _pemasokId;
   final _fakturCtrl = TextEditingController();
   final _tglFakturCtrl = TextEditingController(
@@ -77,10 +80,21 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
           () => k.dio.get('/pemasok', queryParameters: {'per_halaman': 100}));
       final resB = await k.kirim(
           () => k.dio.get('/barang', queryParameters: {'per_halaman': 100}));
+      List<Map<String, dynamic>> fefo = [];
+      try {
+        final resNe = await k.kirim(() => k.dio.get('/near-expired'));
+        final ne = resNe.data['data'] as Map<String, dynamic>;
+        fefo = [
+          ...((ne['sudah_kedaluwarsa'] as List?) ?? [])
+              .cast<Map<String, dynamic>>(),
+          ...((ne['mendekati'] as List?) ?? []).cast<Map<String, dynamic>>(),
+        ];
+      } catch (_) {}
       if (mounted) {
         setState(() {
           _pemasok = (resP.data['data'] as List).cast<Map<String, dynamic>>();
           _barang = (resB.data['data'] as List).cast<Map<String, dynamic>>();
+          _fefoList = fefo;
         });
       }
     } catch (_) {}
@@ -253,7 +267,8 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
       final k = ref.read(klienApiProvider);
       final form = FormData.fromMap({
         'jenis': 'faktur',
-        'berkas': MultipartFile.fromBytes(_fotoBytes!, filename: _fotoNama ?? 'faktur.jpg'),
+        'berkas': MultipartFile.fromBytes(_fotoBytes!,
+            filename: _fotoNama ?? 'faktur.jpg'),
       });
       final upRes = await k.kirim(() => k.dio.post('/lampiran', data: form));
       final lampiranId =
@@ -332,89 +347,394 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
 
   @override
   Widget build(BuildContext context) {
+    final totalSku = _barang.length;
+    final menipisCount = _barang.where((b) {
+      final stok = ((b['stok_total'] ?? 0) as num).toInt();
+      final min = ((b['stok_minimum'] ?? 10) as num).toInt();
+      return stok <= min;
+    }).length;
+
     return Scaffold(
       appBar: const AppBarPharma(
         peranLabel: 'GUDANG',
-        subjudul: 'Penerimaan PO & Batch',
+        subjudul: 'Stok, FEFO & Penerimaan PO',
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(TokenJarak.j4),
+      body: Column(
         children: [
-          if (_pesanGalat != null) ...[
-            PesanPos(jenis: JenisPesan.bahaya, teks: _pesanGalat!),
-            const SizedBox(height: TokenJarak.j3),
-          ],
-          if (_pesanSukses != null) ...[
-            PesanPos(jenis: JenisPesan.berhasil, teks: _pesanSukses!),
-            const SizedBox(height: TokenJarak.j3),
-          ],
-          DropdownButtonFormField<int>(
-            initialValue: _pemasokId,
-            decoration: const InputDecoration(labelText: 'Pemasok (PBF)'),
-            items: _pemasok
-                .map((p) => DropdownMenuItem<int>(
-                      value: (p['id'] as num).toInt(),
-                      child: Text(p['nama'] as String),
-                    ))
-                .toList(),
-            onChanged: (v) => setState(() => _pemasokId = v),
+          // 3 Sub-tab Gudang seperti di video PharmaPOS
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                (0, 'Stok Obat'),
+                (1, 'Urutan FEFO'),
+                (2, 'Penerimaan PO'),
+              ].map((t) {
+                final aktif = _tabGudang == t.$1;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => setState(() => _tabGudang = t.$1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        decoration: BoxDecoration(
+                          color: aktif ? TokenAksi.utama : TokenLatar.halaman,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          t.$2,
+                          textAlign: TextAlign.center,
+                          style: TokenTipografi.keterangan.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: aktif ? Colors.white : TokenTeks.sekunder,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
-          const SizedBox(height: TokenJarak.j3),
-          IsianTeksPos(
-            controller: _fakturCtrl,
-            label: 'Nomor Faktur',
-            pesanSalah: _peringatanFaktur,
-            onEditingComplete: _cekFaktur,
+          Expanded(
+            child: _tabGudang == 0
+                ? ListView(
+                    padding: const EdgeInsets.all(TokenJarak.j4),
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: TokenGaris.pemisah),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Total SKU Aktif',
+                                      style: TokenTipografi.keterangan),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$totalSku',
+                                    style: TokenTipografi.judul
+                                        .copyWith(color: TokenAksi.utama),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: TokenJarak.j3),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: TokenStatus.bahayaLatar,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                    color: TokenStatus.bahayaTeks
+                                        .withValues(alpha: 0.3)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Perlu Restok',
+                                      style: TokenTipografi.keterangan.copyWith(
+                                          color: TokenStatus.bahayaTeks)),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$menipisCount',
+                                    style: TokenTipografi.judul.copyWith(
+                                        color: TokenStatus.bahayaTeks),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: TokenJarak.j4),
+                      const Text('Daftar Stok Obat',
+                          style: TokenTipografi.seksi),
+                      const SizedBox(height: TokenJarak.j2),
+                      ..._barang.map((b) {
+                        final stok = ((b['stok_total'] ?? 0) as num).toInt();
+                        final min = ((b['stok_minimum'] ?? 10) as num).toInt();
+                        final menipis = stok <= min;
+                        final rasio =
+                            min > 0 ? (stok / (min * 3)).clamp(0.08, 1.0) : 0.6;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: TokenJarak.j2),
+                          padding: const EdgeInsets.all(TokenJarak.j3),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: TokenGaris.pemisah),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      b['nama'] as String,
+                                      style: TokenTipografi.dasar.copyWith(
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                  if (menipis)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: TokenStatus.bahayaLatar,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        'Menipis',
+                                        style: TokenTipografi.keterangan
+                                            .copyWith(
+                                                color: TokenStatus.bahayaTeks,
+                                                fontWeight: FontWeight.w700),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Stok: $stok ${b['satuan']} · Min: $min',
+                                style: TokenTipografi.keterangan,
+                              ),
+                              const SizedBox(height: 6),
+                              LinearProgressIndicator(
+                                value: rasio,
+                                minHeight: 6,
+                                backgroundColor: TokenLatar.selang,
+                                color: menipis
+                                    ? TokenStatus.bahayaTeks
+                                    : TokenAksi.utama,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  )
+                : _tabGudang == 1
+                    ? ListView(
+                        padding: const EdgeInsets.all(TokenJarak.j4),
+                        children: [
+                          const Text('Urutan Keluar Batch (FEFO)',
+                              style: TokenTipografi.seksi),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Batch dengan kedaluwarsa terdekat otomatis diprioritaskan keluar terlebih dahulu.',
+                            style: TokenTipografi.keterangan,
+                          ),
+                          const SizedBox(height: TokenJarak.j3),
+                          if (_fefoList.isEmpty)
+                            const PesanPos(
+                              jenis: JenisPesan.berhasil,
+                              teks:
+                                  'Semua batch saat ini dalam masa simpan aman (> batas near-expired).',
+                            )
+                          else
+                            ..._fefoList.asMap().entries.map((entry) {
+                              final item = entry.value;
+                              final brg =
+                                  item['barang'] as Map<String, dynamic>;
+                              final sisa =
+                                  ((item['sisa_hari'] ?? 0) as num).toInt();
+                              final bahaya = sisa <= 14;
+                              return Container(
+                                margin: const EdgeInsets.only(
+                                    bottom: TokenJarak.j2),
+                                padding: const EdgeInsets.all(TokenJarak.j3),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: TokenGaris.pemisah),
+                                ),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: bahaya
+                                          ? TokenStatus.bahayaLatar
+                                          : TokenStatus.peringatanLatar,
+                                      child: Text(
+                                        '#${entry.key + 1}',
+                                        style:
+                                            TokenTipografi.keterangan.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: bahaya
+                                              ? TokenStatus.bahayaTeks
+                                              : TokenStatus.peringatanTeks,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: TokenJarak.j3),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${brg['nama']} (${item['nomor_batch']})',
+                                            style: TokenTipografi.tabel
+                                                .copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                          ),
+                                          Text(
+                                            'Exp: ${formatTanggal(item['tanggal_kedaluwarsa'])} · Stok ${item['stok']}',
+                                            style: TokenTipografi.keterangan,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: bahaya
+                                            ? TokenStatus.bahayaLatar
+                                            : TokenStatus.peringatanLatar,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        sisa < 0
+                                            ? 'Kedaluwarsa'
+                                            : '$sisa hari lagi',
+                                        style:
+                                            TokenTipografi.keterangan.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: bahaya
+                                              ? TokenStatus.bahayaTeks
+                                              : TokenStatus.peringatanTeks,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                        ],
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.all(TokenJarak.j4),
+                        children: [
+                          if (_pesanGalat != null) ...[
+                            PesanPos(
+                                jenis: JenisPesan.bahaya, teks: _pesanGalat!),
+                            const SizedBox(height: TokenJarak.j3),
+                          ],
+                          if (_pesanSukses != null) ...[
+                            PesanPos(
+                                jenis: JenisPesan.berhasil,
+                                teks: _pesanSukses!),
+                            const SizedBox(height: TokenJarak.j3),
+                          ],
+                          DropdownButtonFormField<int>(
+                            initialValue: _pemasokId,
+                            decoration: const InputDecoration(
+                                labelText: 'Pemasok (PBF)'),
+                            items: _pemasok
+                                .map((p) => DropdownMenuItem<int>(
+                                      value: (p['id'] as num).toInt(),
+                                      child: Text(p['nama'] as String),
+                                    ))
+                                .toList(),
+                            onChanged: (v) => setState(() => _pemasokId = v),
+                          ),
+                          const SizedBox(height: TokenJarak.j3),
+                          IsianTeksPos(
+                            controller: _fakturCtrl,
+                            label: 'Nomor Faktur',
+                            pesanSalah: _peringatanFaktur,
+                            onEditingComplete: _cekFaktur,
+                          ),
+                          const SizedBox(height: TokenJarak.j3),
+                          IsianTeksPos(
+                              controller: _tglFakturCtrl,
+                              label: 'Tanggal Faktur (YYYY-MM-DD)'),
+                          const SizedBox(height: TokenJarak.j4),
+                          Row(
+                            children: [
+                              const Expanded(
+                                  child: Text('Daftar Barang',
+                                      style: TokenTipografi.seksi)),
+                              TombolPos(
+                                label: 'Tambah',
+                                ikon: LucideIcons.plus,
+                                jenis: JenisTombol.sekunder,
+                                penuh: false,
+                                onPressed: _tambahBarisDialog,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: TokenJarak.j2),
+                          ..._baris.map((b) {
+                            final expDt =
+                                DateTime.tryParse(b.tanggalKedaluwarsa);
+                            final sisaHari = expDt != null
+                                ? expDt.difference(DateTime.now()).inDays
+                                : 0;
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text('${b.barangNama} (${b.nomorBatch})'),
+                              subtitle: Text(
+                                  '${b.jumlah} x ${formatRupiah(b.hargaBeli)} · Sisa $sisaHari hari'),
+                              trailing: Text(
+                                formatRupiah(b.jumlah * b.hargaBeli),
+                                style: TokenTipografi.angkaTabular(
+                                    TokenTipografi.dasar),
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: TokenJarak.j3),
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: _kondisiSesuai,
+                            activeColor: TokenAksi.utama,
+                            onChanged: (v) =>
+                                setState(() => _kondisiSesuai = v ?? true),
+                            title: const Text(
+                              'Jumlah & kemasan fisik sesuai faktur PO',
+                              style: TokenTipografi.tabel,
+                            ),
+                          ),
+                          const SizedBox(height: TokenJarak.j3),
+                          TombolPos(
+                            label: _fotoPath == null
+                                ? 'Ambil Foto Faktur (Wajib)'
+                                : 'Foto Faktur Tersimpan',
+                            ikon: LucideIcons.camera,
+                            jenis: JenisTombol.sekunder,
+                            onPressed: _ambilFoto,
+                          ),
+                          if (_fotoBytes != null) ...[
+                            const SizedBox(height: TokenJarak.j2),
+                            Image.memory(_fotoBytes!,
+                                height: 120, fit: BoxFit.cover),
+                          ],
+                          const SizedBox(height: TokenJarak.j5),
+                          TombolPos(
+                              label: 'Konfirmasi & Simpan Penerimaan',
+                              memuat: _memuat,
+                              onPressed: _kondisiSesuai ? _simpan : null),
+                        ],
+                      ),
           ),
-          const SizedBox(height: TokenJarak.j3),
-          IsianTeksPos(
-              controller: _tglFakturCtrl, label: 'Tanggal Faktur (YYYY-MM-DD)'),
-          const SizedBox(height: TokenJarak.j4),
-          Row(
-            children: [
-              const Expanded(
-                  child: Text('Daftar Barang', style: TokenTipografi.seksi)),
-              TombolPos(
-                label: 'Tambah',
-                ikon: LucideIcons.plus,
-                jenis: JenisTombol.sekunder,
-                penuh: false,
-                onPressed: _tambahBarisDialog,
-              ),
-            ],
-          ),
-          const SizedBox(height: TokenJarak.j2),
-          ..._baris.map((b) {
-            final expDt = DateTime.tryParse(b.tanggalKedaluwarsa);
-            final sisaHari =
-                expDt != null ? expDt.difference(DateTime.now()).inDays : 0;
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text('${b.barangNama} (${b.nomorBatch})'),
-              subtitle: Text(
-                  '${b.jumlah} x ${formatRupiah(b.hargaBeli)} · Sisa $sisaHari hari'),
-              trailing: Text(
-                formatRupiah(b.jumlah * b.hargaBeli),
-                style: TokenTipografi.angkaTabular(TokenTipografi.dasar),
-              ),
-            );
-          }),
-          const SizedBox(height: TokenJarak.j4),
-          TombolPos(
-            label: _fotoPath == null
-                ? 'Ambil Foto Faktur (Wajib)'
-                : 'Foto Faktur Tersimpan',
-            ikon: LucideIcons.camera,
-            jenis: JenisTombol.sekunder,
-            onPressed: _ambilFoto,
-          ),
-          if (_fotoBytes != null) ...[
-            const SizedBox(height: TokenJarak.j2),
-            Image.memory(_fotoBytes!, height: 120, fit: BoxFit.cover),
-          ],
-          const SizedBox(height: TokenJarak.j6),
-          TombolPos(
-              label: 'Simpan Penerimaan', memuat: _memuat, onPressed: _simpan),
         ],
       ),
     );

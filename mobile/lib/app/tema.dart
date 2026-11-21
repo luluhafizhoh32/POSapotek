@@ -19,8 +19,7 @@ ThemeData bangunTemaPos() {
       foregroundColor: TokenTeks.diUtama,
       elevation: 0,
       toolbarHeight: TokenUkuran.tinggiBilahAtas,
-      titleTextStyle:
-          TokenTipografi.seksi.copyWith(color: TokenTeks.diUtama),
+      titleTextStyle: TokenTipografi.seksi.copyWith(color: TokenTeks.diUtama),
       iconTheme: const IconThemeData(
           color: TokenTeks.diUtama, size: TokenUkuran.ukuranIkon),
     ),

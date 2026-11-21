@@ -86,12 +86,12 @@ class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
   @override
   Widget build(BuildContext context) {
     final omzetHariIni = ((_data?['omzet_hari_ini'] ?? 0) as num).toInt();
-    final trxHariIni = ((_data?['jumlah_transaksi_hari_ini'] ?? 0) as num).toInt();
+    final trxHariIni =
+        ((_data?['jumlah_transaksi_hari_ini'] ?? 0) as num).toInt();
     final labaBulanIni =
         ((_insight?['ringkasan']?['laba_bulan_ini'] ?? 0) as num).toInt();
-    final tren = (_insight?['tren_7_hari'] as List?)
-            ?.cast<Map<String, dynamic>>() ??
-        [];
+    final tren =
+        (_insight?['tren_7_hari'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final bayar = (_insight?['distribusi_pembayaran'] as List?)
             ?.cast<Map<String, dynamic>>() ??
         [];
@@ -304,7 +304,8 @@ class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
                                                 decoration: BoxDecoration(
                                                   gradient:
                                                       const LinearGradient(
-                                                    begin: Alignment.bottomCenter,
+                                                    begin:
+                                                        Alignment.bottomCenter,
                                                     end: Alignment.topCenter,
                                                     colors: [
                                                       Color(0xFF059669),

@@ -16,6 +16,7 @@ class LayarAiInsight extends ConsumerStatefulWidget {
 class _LayarAiInsightState extends ConsumerState<LayarAiInsight> {
   Map<String, dynamic>? _data;
   bool _memuat = true;
+  String? _galat;
 
   @override
   void initState() {
@@ -24,7 +25,10 @@ class _LayarAiInsightState extends ConsumerState<LayarAiInsight> {
   }
 
   Future<void> _muat() async {
-    setState(() => _memuat = true);
+    setState(() {
+      _memuat = true;
+      _galat = null;
+    });
     try {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(() => k.dio.get('/ai/insight'));
@@ -32,6 +36,10 @@ class _LayarAiInsightState extends ConsumerState<LayarAiInsight> {
         setState(() => _data = res.data['data'] as Map<String, dynamic>);
       }
     } catch (_) {
+      if (mounted) {
+        setState(() => _galat =
+            'Gagal memuat AI Insight. Pastikan backend sudah di-restart (npm run dev).');
+      }
     } finally {
       if (mounted) setState(() => _memuat = false);
     }
@@ -39,20 +47,15 @@ class _LayarAiInsightState extends ConsumerState<LayarAiInsight> {
 
   @override
   Widget build(BuildContext context) {
-    final ring = _data?['ringkasan'] as Map<String, dynamic>?;
-    final tren =
-        (_data?['tren_7_hari'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    final bayar = (_data?['distribusi_pembayaran'] as List?)
-            ?.cast<Map<String, dynamic>>() ??
-        [];
     final forecast =
         (_data?['forecast'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final rfm = (_data?['rfm'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final ring = _data?['ringkasan'] as Map<String, dynamic>?;
 
-    final maxOmzet = tren.fold<int>(
+    final maxPred = forecast.fold<int>(
       1,
       (m, e) {
-        final v = (e['omzet'] as num).toInt();
+        final v = (e['prediksi_minggu_depan'] as num).toInt();
         return v > m ? v : m;
       },
     );
@@ -60,238 +63,341 @@ class _LayarAiInsightState extends ConsumerState<LayarAiInsight> {
     return Scaffold(
       appBar: const AppBarPharma(
         peranLabel: 'OWNER',
-        subjudul: 'AI Insight & Analitik',
+        subjudul: 'AI Insight & Prediksi',
       ),
       body: RefreshIndicator(
         onRefresh: _muat,
-        child: _memuat || _data == null
+        child: _memuat
             ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.all(TokenJarak.j4),
-                children: [
-                  Row(
+            : _galat != null || _data == null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(TokenJarak.j4),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          PesanPos(
+                            jenis: JenisPesan.bahaya,
+                            teks: _galat ?? 'Data AI Insight belum tersedia.',
+                          ),
+                          const SizedBox(height: TokenJarak.j3),
+                          TombolPos(
+                            label: 'Muat Ulang',
+                            penuh: false,
+                            onPressed: _muat,
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.all(TokenJarak.j4),
                     children: [
-                      Expanded(
-                        child: _KartuRingkas(
-                          judul: 'Omzet Hari Ini',
-                          nilai: formatRupiah(
-                              ((ring?['omzet_hari_ini'] ?? 0) as num).toInt()),
-                          aksen: TokenAksi.utama,
-                        ),
+                      // Ringkasan cepat
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _KartuRingkas(
+                              judul: 'Omzet Hari Ini',
+                              nilai: formatRupiah(
+                                  ((ring?['omzet_hari_ini'] ?? 0) as num)
+                                      .toInt()),
+                              aksen: TokenAksi.utama,
+                            ),
+                          ),
+                          const SizedBox(width: TokenJarak.j3),
+                          Expanded(
+                            child: _KartuRingkas(
+                              judul: 'Laba Bulan Ini',
+                              nilai: formatRupiah(
+                                  ((ring?['laba_bulan_ini'] ?? 0) as num)
+                                      .toInt()),
+                              aksen: WarnaMentah.ai600,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: TokenJarak.j3),
-                      Expanded(
-                        child: _KartuRingkas(
-                          judul: 'Laba Bulan Ini',
-                          nilai: formatRupiah(
-                              ((ring?['laba_bulan_ini'] ?? 0) as num).toInt()),
-                          aksen: WarnaMentah.ai600,
+                      const SizedBox(height: TokenJarak.j4),
+
+                      // Kartu Ungu AI Demand Forecasting seperti di video
+                      Container(
+                        padding: const EdgeInsets.all(TokenJarak.j4),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF7C3AED), Color(0xFF5B21B6)],
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x2E7C3AED),
+                              blurRadius: 16,
+                              offset: Offset(0, 6),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: TokenJarak.j4),
-                  _KartuBagian(
-                    judul: 'Grafik Penjualan 7 Hari Terakhir',
-                    ikon: LucideIcons.trendingUp,
-                    warnaIkon: TokenAksi.utama,
-                    child: SizedBox(
-                      height: 140,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: tren.map((t) {
-                          final omz = (t['omzet'] as num).toInt();
-                          final rasio =
-                              maxOmzet > 0 ? (omz / maxOmzet).clamp(0.08, 1.0) : 0.08;
-                          return Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Expanded(
-                                    child: Align(
-                                      alignment: Alignment.bottomCenter,
-                                      child: FractionallySizedBox(
-                                        heightFactor: rasio,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: TokenAksi.utama,
-                                            borderRadius: BorderRadius.circular(
-                                                TokenRadius.kecil),
-                                          ),
-                                        ),
-                                      ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(LucideIcons.sparkles,
+                                    color: Colors.white, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'AI Demand Forecasting',
+                                    style: TokenTipografi.dasar.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    t['label'] as String,
-                                    style: TokenTipografi.keterangan,
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '7 Hari Ke Depan',
+                                    style: TokenTipografi.keterangan.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: TokenJarak.j3),
+                            if (forecast.isNotEmpty) ...[
+                              // Bar chart Aktual vs Prediksi
+                              SizedBox(
+                                height: 110,
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: forecast.take(5).map((f) {
+                                    final pred =
+                                        (f['prediksi_minggu_depan'] as num)
+                                            .toInt();
+                                    final rasio =
+                                        (pred / maxPred).clamp(0.18, 1.0);
+                                    final namaPendek =
+                                        (f['nama'] as String).split(' ').first;
+                                    return Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 4),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              '$pred',
+                                              style: TokenTipografi.keterangan
+                                                  .copyWith(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Expanded(
+                                              child: Align(
+                                                alignment:
+                                                    Alignment.bottomCenter,
+                                                child: FractionallySizedBox(
+                                                  heightFactor: rasio,
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white
+                                                          .withValues(
+                                                              alpha: 0.85),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              6),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              namaPendek,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TokenTipografi.keterangan
+                                                  .copyWith(
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.9),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              const SizedBox(height: TokenJarak.j3),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(TokenJarak.j3),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Permintaan ${forecast.first['nama']} diprediksi naik +${forecast.first['perubahan_persen']}% minggu depan',
+                                      style: TokenTipografi.tabel.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: WarnaMentah.ai700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      forecast.first['rekomendasi'] as String,
+                                      style: TokenTipografi.keterangan,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: TokenJarak.j4),
+
+                      // AI Segmentasi Pelanggan RFM (Grid 2x2 berwarna seperti di video)
+                      Container(
+                        padding: const EdgeInsets.all(TokenJarak.j4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: TokenGaris.pemisah),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(LucideIcons.users,
+                                    size: 18, color: WarnaMentah.ai600),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'AI Segmentasi Pelanggan RFM',
+                                  style: TokenTipografi.dasar
+                                      .copyWith(fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Recency · Frequency · Monetary',
+                              style: TokenTipografi.keterangan,
+                            ),
+                            const SizedBox(height: TokenJarak.j3),
+                            GridView.count(
+                              crossAxisCount: 2,
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              mainAxisSpacing: TokenJarak.j2,
+                              crossAxisSpacing: TokenJarak.j2,
+                              childAspectRatio: 1.5,
+                              children: rfm.map((s) {
+                                final w = s['warna'] as String? ?? 'utama';
+                                final (bg, fg) = switch (w) {
+                                  'berhasil' => (
+                                      TokenStatus.berhasilLatar,
+                                      TokenStatus.berhasilTeks
+                                    ),
+                                  'peringatan' => (
+                                      TokenStatus.peringatanLatar,
+                                      TokenStatus.peringatanTeks
+                                    ),
+                                  'info' => (
+                                      WarnaMentah.ai50,
+                                      WarnaMentah.ai700
+                                    ),
+                                  _ => (
+                                      TokenStatus.informasiLatar,
+                                      TokenStatus.informasiTeks
+                                    ),
+                                };
+                                return Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: bg,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: fg.withValues(alpha: 0.25)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        s['segmen'] as String,
+                                        style: TokenTipografi.tabel.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: fg,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${s['jumlah']} pelanggan (${s['persen']}%)',
+                                        style:
+                                            TokenTipografi.keterangan.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: TokenTeks.utama,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        s['deskripsi'] as String,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TokenTipografi.keterangan,
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: TokenJarak.j3),
+                            Container(
+                              padding: const EdgeInsets.all(TokenJarak.j3),
+                              decoration: BoxDecoration(
+                                color: WarnaMentah.ai50,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(LucideIcons.sparkles,
+                                      size: 16, color: WarnaMentah.ai600),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Saran AI: Kirim promo vitamin ke pelanggan segmen "Berisiko" untuk meningkatkan kunjungan ulang.',
+                                      style: TokenTipografi.keterangan.copyWith(
+                                        color: WarnaMentah.ai700,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          );
-                        }).toList(),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: TokenJarak.j4),
-                  _KartuBagian(
-                    judul: 'Distribusi Metode Pembayaran',
-                    ikon: LucideIcons.creditCard,
-                    warnaIkon: TokenAksi.utama,
-                    child: Column(
-                      children: bayar.map((b) {
-                        final persen = (b['persen'] as num).toInt();
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: TokenJarak.j2),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(b['label'] as String,
-                                      style: TokenTipografi.tabel),
-                                  Text(
-                                    '$persen% (${b['jumlah']} trx)',
-                                    style: TokenTipografi.tabel
-                                        .copyWith(fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              LinearProgressIndicator(
-                                value: persen / 100.0,
-                                minHeight: 8,
-                                backgroundColor: TokenLatar.selang,
-                                color: TokenAksi.utama,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: TokenJarak.j4),
-                  _KartuBagian(
-                    judul: 'AI Demand Forecasting (7 Hari Ke Depan)',
-                    ikon: LucideIcons.sparkles,
-                    warnaIkon: WarnaMentah.ai600,
-                    latar: WarnaMentah.ai50,
-                    child: Column(
-                      children: forecast.map((f) {
-                        final naik = (f['perubahan_persen'] as num) >= 0;
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: TokenJarak.j2),
-                          padding: const EdgeInsets.all(TokenJarak.j3),
-                          decoration: BoxDecoration(
-                            color: TokenLatar.latar,
-                            borderRadius:
-                                BorderRadius.circular(TokenRadius.kecil),
-                            border: Border.all(color: TokenGaris.pemisah),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      f['nama'] as String,
-                                      style: TokenTipografi.tabel.copyWith(
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                                  Text(
-                                    '${naik ? '+' : ''}${f['perubahan_persen']}%',
-                                    style: TokenTipografi.keterangan.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: naik
-                                          ? TokenStatus.berhasilTeks
-                                          : TokenStatus.peringatanTeks,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Prediksi: ${f['prediksi_minggu_depan']} ${f['satuan']} · Stok saat ini: ${f['stok_saat_ini']}',
-                                style: TokenTipografi.keterangan,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                f['rekomendasi'] as String,
-                                style: TokenTipografi.keterangan.copyWith(
-                                  color: WarnaMentah.ai700,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: TokenJarak.j4),
-                  _KartuBagian(
-                    judul: 'AI Segmentasi Pelanggan RFM',
-                    ikon: LucideIcons.users,
-                    warnaIkon: WarnaMentah.ai600,
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: TokenJarak.j2,
-                      crossAxisSpacing: TokenJarak.j2,
-                      childAspectRatio: 1.55,
-                      children: rfm.map((s) {
-                        return Container(
-                          padding: const EdgeInsets.all(TokenJarak.j3),
-                          decoration: BoxDecoration(
-                            color: TokenLatar.halaman,
-                            borderRadius:
-                                BorderRadius.circular(TokenRadius.kecil),
-                            border: Border.all(color: TokenGaris.pemisah),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                s['segmen'] as String,
-                                style: TokenTipografi.tabel
-                                    .copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${s['jumlah']} pelanggan (${s['persen']}%)',
-                                style: TokenTipografi.keterangan.copyWith(
-                                  color: TokenAksi.utama,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                s['deskripsi'] as String,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TokenTipografi.keterangan,
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
       ),
     );
   }
@@ -310,7 +416,7 @@ class _KartuRingkas extends StatelessWidget {
       padding: const EdgeInsets.all(TokenJarak.j3),
       decoration: BoxDecoration(
         color: TokenLatar.latar,
-        borderRadius: BorderRadius.circular(TokenRadius.sedang),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: TokenGaris.pemisah),
       ),
       child: Column(
@@ -323,53 +429,6 @@ class _KartuRingkas extends StatelessWidget {
             style: TokenTipografi.angkaTabular(TokenTipografi.seksi)
                 .copyWith(color: aksen, fontWeight: FontWeight.w700),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _KartuBagian extends StatelessWidget {
-  final String judul;
-  final IconData ikon;
-  final Color warnaIkon;
-  final Color? latar;
-  final Widget child;
-  const _KartuBagian({
-    required this.judul,
-    required this.ikon,
-    required this.warnaIkon,
-    this.latar,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(TokenJarak.j4),
-      decoration: BoxDecoration(
-        color: latar ?? TokenLatar.latar,
-        borderRadius: BorderRadius.circular(TokenRadius.sedang),
-        border: Border.all(color: TokenGaris.pemisah),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(ikon, size: 18, color: warnaIkon),
-              const SizedBox(width: TokenJarak.j2),
-              Expanded(
-                child: Text(
-                  judul,
-                  style: TokenTipografi.dasar
-                      .copyWith(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: TokenJarak.j3),
-          child,
         ],
       ),
     );
