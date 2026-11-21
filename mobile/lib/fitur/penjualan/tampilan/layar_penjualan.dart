@@ -62,6 +62,7 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
   List<ItemBarangPos> _hasilCari = [];
   String _filterGolongan = 'semua';
   bool _pelangganMember = false;
+  Map<String, String>? _resep;
   String _kunciIdempoten = const Uuid().v4();
   Timer? _debouncePratinjau;
   bool _sedangOfflineEstimasi = false;
@@ -198,6 +199,69 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
         .every((k) => k.statusPratinjau == null || k.statusPratinjau == 'ok');
   }
 
+  Future<void> _isiResepDialog() async {
+    final noCtrl =
+        TextEditingController(text: _resep?['nomor_resep'] ?? 'RSP-001');
+    final dokterCtrl = TextEditingController(
+        text: _resep?['nama_dokter'] ?? 'dr. Rina Kusuma, Sp.PD');
+    final pasienCtrl = TextEditingController(text: _resep?['nama_pasien'] ?? '');
+    final tglCtrl = TextEditingController(
+      text: _resep?['tanggal_resep'] ??
+          DateTime.now().toIso8601String().substring(0, 10),
+    );
+    final ok = await tampilkanDialogPos<bool>(
+      context: context,
+      judul: 'Data Resep Dokter',
+      isi: SizedBox(
+        width: 320,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IsianTeksPos(controller: noCtrl, label: 'Nomor Resep'),
+              const SizedBox(height: TokenJarak.j2),
+              IsianTeksPos(controller: dokterCtrl, label: 'Nama Dokter'),
+              const SizedBox(height: TokenJarak.j2),
+              IsianTeksPos(controller: pasienCtrl, label: 'Nama Pasien'),
+              const SizedBox(height: TokenJarak.j2),
+              IsianTeksPos(
+                  controller: tglCtrl, label: 'Tanggal Resep (YYYY-MM-DD)'),
+            ],
+          ),
+        ),
+      ),
+      tombol: [
+        TombolPos(
+          label: 'Hapus',
+          jenis: JenisTombol.sekunder,
+          penuh: false,
+          onPressed: () {
+            setState(() => _resep = null);
+            Navigator.pop(context, false);
+          },
+        ),
+        TombolPos(
+          label: 'Simpan Resep',
+          penuh: false,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+    if (ok == true &&
+        noCtrl.text.trim().isNotEmpty &&
+        dokterCtrl.text.trim().isNotEmpty &&
+        pasienCtrl.text.trim().isNotEmpty) {
+      setState(() {
+        _resep = {
+          'nomor_resep': noCtrl.text.trim(),
+          'nama_dokter': dokterCtrl.text.trim(),
+          'nama_pasien': pasienCtrl.text.trim(),
+          'tanggal_resep': tglCtrl.text.trim(),
+        };
+      });
+    }
+  }
+
   Future<void> _bukaPanelPembayaran() async {
     final hasil = await showModalBottomSheet<_HasilPanelBayar>(
       context: context,
@@ -213,6 +277,7 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
             .map((k) => (barangId: k.barang.id, jumlah: k.jumlah))
             .toList(),
         sedangOffline: _sedangOfflineEstimasi,
+        resep: _resep,
       ),
     );
     if (!mounted || hasil == null) return;
@@ -486,18 +551,35 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                     children: [
                       Text('Keranjang (${_keranjang.length})',
                           style: TokenTipografi.seksi),
-                      ActionChip(
-                        avatar: Icon(
-                          _pelangganMember
-                              ? LucideIcons.userCheck
-                              : LucideIcons.userPlus,
-                          size: 16,
-                          color: TokenAksi.utama,
-                        ),
-                        label: Text(
-                            _pelangganMember ? 'Member Aktif' : '+ Member'),
-                        onPressed: () => setState(
-                            () => _pelangganMember = !_pelangganMember),
+                      Wrap(
+                        spacing: 6,
+                        children: [
+                          ActionChip(
+                            avatar: Icon(
+                              LucideIcons.fileText,
+                              size: 16,
+                              color: _resep != null
+                                  ? TokenStatus.berhasilTeks
+                                  : TokenAksi.utama,
+                            ),
+                            label: Text(_resep != null ? 'Resep ✓' : 'Resep'),
+                            onPressed: _isiResepDialog,
+                          ),
+                          ActionChip(
+                            avatar: Icon(
+                              _pelangganMember
+                                  ? LucideIcons.userCheck
+                                  : LucideIcons.userPlus,
+                              size: 16,
+                              color: TokenAksi.utama,
+                            ),
+                            label: Text(_pelangganMember
+                                ? 'Member Aktif'
+                                : '+ Member'),
+                            onPressed: () => setState(
+                                () => _pelangganMember = !_pelangganMember),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -823,12 +905,14 @@ class _PanelPembayaran extends ConsumerStatefulWidget {
   final String kunciIdempoten;
   final List<({int barangId, int jumlah})> baris;
   final bool sedangOffline;
+  final Map<String, String>? resep;
 
   const _PanelPembayaran({
     required this.total,
     required this.kunciIdempoten,
     required this.baris,
     required this.sedangOffline,
+    this.resep,
   });
 
   @override
@@ -873,6 +957,7 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
       'uang_diterima': _uangDiterima,
       'pembayaran_nontunai_id': null,
       'waktu_perangkat': DateTime.now().toIso8601String(),
+      if (widget.resep != null) 'resep': widget.resep,
     };
 
     try {

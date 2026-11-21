@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:pharmapos_mobile/app/router.dart';
 import 'package:pharmapos_mobile/app/tema.dart';
+import 'package:pharmapos_mobile/fitur/dev/layar_katalog_komponen.dart';
 import 'package:pharmapos_mobile/fitur/penjualan/data/penjualan_repositori.dart';
 import 'package:pharmapos_mobile/fitur/penjualan/tampilan/layar_penjualan.dart';
 import 'package:pharmapos_mobile/inti/drift_db.dart';
@@ -311,6 +312,27 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 50));
       await db.close();
+    }
+  });
+
+  testWidgets(
+      'Responsif v2.1: Katalog komponen tampil bersih pada 360x800 dan 1440x900',
+      (tester) async {
+    for (final size in const [Size(360, 800), Size(1440, 900)]) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: bangunTemaPos(),
+          home: const LayarKatalogKomponen(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Katalog Komponen PharmaPOS v2.1'), findsOneWidget);
+      expect(find.text('Penjualan hari ini'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     }
   });
 }

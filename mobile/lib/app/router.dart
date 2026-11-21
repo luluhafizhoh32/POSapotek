@@ -11,6 +11,7 @@ import '../fitur/ai/tampilan/layar_cek_interaksi_ai.dart';
 import '../fitur/antrean/tampilan/layar_antrean.dart';
 import '../fitur/auth/tampilan/layar_auth.dart';
 import '../fitur/dev/layar_katalog_komponen.dart';
+import '../fitur/keuangan/tampilan/layar_aset_anggaran.dart';
 import '../fitur/keuangan/tampilan/layar_keuangan.dart';
 import '../fitur/keuangan/tampilan/layar_utang_buku_besar.dart';
 import '../fitur/laporan/tampilan/layar_laporan.dart';
@@ -374,6 +375,11 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama>
                   'Buku Besar',
                   LucideIcons.bookMarked,
                   () => const LayarBukuBesar()
+                ),
+                (
+                  'Aset Tetap & Anggaran',
+                  LucideIcons.building2,
+                  () => const LayarAsetAnggaran()
                 ),
                 ('Pengguna', LucideIcons.users, () => const LayarPengguna()),
                 (

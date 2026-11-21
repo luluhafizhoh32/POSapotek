@@ -1,8 +1,11 @@
-# Aplikasi POS Apotek KADIN Bengkalis
+# PharmaPOS — Sistem Manajemen Apotek, Kasir (POS), dan Akuntansi (KADIN Bengkalis)
 
-Sistem kasir dan manajemen stok apotek swasta UMKM binaan KADIN Bengkalis (Riau):
-- **Backend REST API & Worker**: Node.js, TypeScript, Fastify, PostgreSQL 16/18 (SQL murni + RLS), `zod`, `argon2id`, `jose`, `node-cron`, `vitest`.
-- **Aplikasi Mobile**: Flutter (Android, `minSdk 26`, potret, locale `id_ID`), Riverpod, `go_router`, `dio`, Drift (SQLite antrean offline), ESC/POS 58 mm.
+Platform terpadu khusus apotek UMKM binaan **KADIN Kabupaten Bengkalis (Riau)**:
+- **Backend REST API & Worker**: Node.js, TypeScript, Fastify, PostgreSQL 16/18 (SQL murni + RLS multi-apotek), `zod`, `argon2id`, `jose`, `node-cron`, `vitest`, serta modul **AI Drug Safety Checker**, **AI Insight (Forecasting & RFM)**, dan **Asisten AI Gemini** (baca-saja berbasis data nyata).
+- **Aplikasi Mobile & Web (Flutter)**: Android (utama) + Tablet & Web Desktop responsif (`ResponsiveScaffold`), Riverpod, `go_router`, `dio`, Drift (antrean offline terenkripsi), ESC/POS 58 mm, serta sistem desain **PharmaPOS v2.1 (Deep Teal `#0F766E`)**.
+- **Dokumentasi**:
+  - [docs/AUDIT.md](docs/AUDIT.md) — Hasil audit teknis & pemetaan fitur.
+  - [docs/KONFIGURASI-EKSTERNAL.md](docs/KONFIGURASI-EKSTERNAL.md) — Daftar kredensial & integrasi eksternal (Gemini API, WhatsApp, QRIS, Dinkes/BPOM, FCM).
 
 ---
 
