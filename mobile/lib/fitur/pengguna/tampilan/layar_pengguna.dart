@@ -30,9 +30,10 @@ class _LayarPenggunaState extends ConsumerState<LayarPengguna> {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(
           () => k.dio.get('/pengguna', queryParameters: {'per_halaman': 100}));
-      if (mounted)
+      if (mounted) {
         setState(() =>
             _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _memuat = false);
@@ -208,9 +209,10 @@ class _LayarJejakAuditState extends ConsumerState<LayarJejakAudit> {
         final k = ref.read(klienApiProvider);
         final res = await k.kirim(() =>
             k.dio.get('/jejak-audit', queryParameters: {'per_halaman': 50}));
-        if (mounted)
+        if (mounted) {
           setState(() => _daftar =
               (res.data['data'] as List).cast<Map<String, dynamic>>());
+        }
       } catch (_) {
       } finally {
         if (mounted) setState(() => _memuat = false);

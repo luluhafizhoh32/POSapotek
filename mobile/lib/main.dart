@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart' as fl;
 import 'package:material_ui/material_ui.dart' as mui;
@@ -40,9 +41,9 @@ class _PosApotekAppState extends ConsumerState<PosApotekApp> {
       locale: const Locale('id', 'ID'),
       supportedLocales: const [Locale('id', 'ID')],
       localizationsDelegates: const [
-        fl.GlobalMaterialLocalizations.delegate,
+        mui.GlobalMaterialLocalizations.delegate,
         fl.GlobalWidgetsLocalizations.delegate,
-        fl.GlobalCupertinoLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
         mui.DefaultMaterialLocalizations.delegate,
       ],
       routerConfig: router,

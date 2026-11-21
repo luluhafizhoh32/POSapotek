@@ -1,5 +1,6 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -48,6 +49,8 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
   );
   final List<_BarisTerima> _baris = [];
   String? _fotoPath;
+  Uint8List? _fotoBytes;
+  String? _fotoNama;
   String _kunciIdempoten = const Uuid().v4();
   bool _memuat = false;
   String? _pesanGalat;
@@ -110,13 +113,20 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
   Future<void> _ambilFoto() async {
     final picker = ImagePicker();
     final xfile = await picker.pickImage(
-      source: ImageSource.camera,
+      source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
       maxWidth: 1600,
       maxHeight: 1600,
       imageQuality: 80,
     );
-    if (xfile != null && mounted) {
-      setState(() => _fotoPath = xfile.path);
+    if (xfile != null) {
+      final bytes = await xfile.readAsBytes();
+      if (mounted) {
+        setState(() {
+          _fotoPath = xfile.path;
+          _fotoBytes = bytes;
+          _fotoNama = xfile.name.isNotEmpty ? xfile.name : 'faktur.jpg';
+        });
+      }
     }
   }
 
@@ -243,7 +253,7 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
       final k = ref.read(klienApiProvider);
       final form = FormData.fromMap({
         'jenis': 'faktur',
-        'berkas': await MultipartFile.fromFile(_fotoPath!),
+        'berkas': MultipartFile.fromBytes(_fotoBytes!, filename: _fotoNama ?? 'faktur.jpg'),
       });
       final upRes = await k.kirim(() => k.dio.post('/lampiran', data: form));
       final lampiranId =
@@ -395,9 +405,9 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
             jenis: JenisTombol.sekunder,
             onPressed: _ambilFoto,
           ),
-          if (_fotoPath != null) ...[
+          if (_fotoBytes != null) ...[
             const SizedBox(height: TokenJarak.j2),
-            Image.file(File(_fotoPath!), height: 120, fit: BoxFit.cover),
+            Image.memory(_fotoBytes!, height: 120, fit: BoxFit.cover),
           ],
           const SizedBox(height: TokenJarak.j6),
           TombolPos(

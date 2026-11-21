@@ -44,8 +44,9 @@ class _LayarKeuanganState extends ConsumerState<LayarKeuangan> {
           queryParameters: {'periode': _periodeCtrl.text.trim()},
         ),
       );
-      if (mounted)
+      if (mounted) {
         setState(() => _data = res.data['data'] as Map<String, dynamic>);
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _memuat = false);

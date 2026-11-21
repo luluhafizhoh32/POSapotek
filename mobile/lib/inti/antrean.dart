@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'drift_db.dart';
 import 'galat.dart';
 import 'klien_api.dart';
@@ -21,9 +22,11 @@ class PengirimTransaksiDio implements PengirimTransaksiApi {
 
   @override
   Future<String> unggahLampiran(String pathBerkas, String jenis) async {
+    final xfile = XFile(pathBerkas);
+    final bytes = await xfile.readAsBytes();
     final form = FormData.fromMap({
       'jenis': jenis,
-      'berkas': await MultipartFile.fromFile(pathBerkas),
+      'berkas': MultipartFile.fromBytes(bytes, filename: xfile.name.isNotEmpty ? xfile.name : 'lampiran.jpg'),
     });
     final res = await _klien.kirim(() => _klien.dio.post('/lampiran', data: form));
     return (res.data['data'] as Map<String, dynamic>)['id'] as String;

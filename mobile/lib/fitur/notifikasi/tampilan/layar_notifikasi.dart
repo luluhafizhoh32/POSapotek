@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -103,6 +104,22 @@ class LayarAkun extends ConsumerWidget {
   const LayarAkun({super.key});
 
   Future<void> _pilihPrinter(BuildContext context, WidgetRef ref) async {
+    if (kIsWeb) {
+      await tampilkanDialogPos<void>(
+        context: context,
+        judul: 'Printer Bluetooth',
+        isi: const Text('Printer termal Bluetooth hanya tersedia pada aplikasi Android.'),
+        tombol: [
+          TombolPos(
+            label: 'Tutup',
+            jenis: JenisTombol.sekunder,
+            penuh: false,
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      );
+      return;
+    }
     final devices = await PrintBluetoothThermal.pairedBluetooths;
     if (!context.mounted) return;
     await tampilkanDialogPos<void>(

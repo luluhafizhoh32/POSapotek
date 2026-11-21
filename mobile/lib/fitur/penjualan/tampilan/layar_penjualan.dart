@@ -657,8 +657,9 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
             kunciIdempoten: widget.kunciIdempoten,
             payload: payload,
           );
-      if (mounted)
+      if (mounted) {
         Navigator.of(context).pop(_HasilPanelBayar(penjualan: hasil));
+      }
     } on GalatApi catch (g) {
       if (g.adalahGalatJaringan) {
         await ref.read(antreanProvider.notifier).masukkan(
@@ -666,8 +667,9 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
               kunciIdempoten: widget.kunciIdempoten,
               payload: payload,
             );
-        if (mounted)
+        if (mounted) {
           Navigator.of(context).pop(const _HasilPanelBayar(tertunda: true));
+        }
       } else {
         if (mounted) setState(() => _pesanGalat = g.pesan);
       }

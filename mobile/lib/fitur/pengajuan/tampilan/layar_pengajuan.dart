@@ -184,9 +184,14 @@ class _LayarBuatPengajuanState extends ConsumerState<LayarBuatPengajuan> {
     try {
       final k = ref.read(klienApiProvider);
       if (_fotoPath != null) {
+        final xfile = XFile(_fotoPath!);
+        final bytes = await xfile.readAsBytes();
         final form = FormData.fromMap({
           'jenis': 'bukti_pengurangan',
-          'berkas': await MultipartFile.fromFile(_fotoPath!),
+          'berkas': MultipartFile.fromBytes(
+            bytes,
+            filename: xfile.name.isNotEmpty ? xfile.name : 'bukti.jpg',
+          ),
         });
         final up = await k.kirim(() => k.dio.post('/lampiran', data: form));
         payload['lampiran_id'] =
@@ -315,8 +320,9 @@ class _LayarDetailPengajuanState extends ConsumerState<LayarDetailPengajuan> {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(
           () => k.dio.get('/pengajuan-pengurangan/${widget.pengajuanId}'));
-      if (mounted)
+      if (mounted) {
         setState(() => _data = res.data['data'] as Map<String, dynamic>);
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _memuat = false);

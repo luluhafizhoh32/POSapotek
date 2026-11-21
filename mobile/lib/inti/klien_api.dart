@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'galat.dart';
 import 'sesi.dart';
 
-const String defaultApiBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://10.0.2.2:3000/api/v1',
-);
+const String _envApiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+
+String get defaultApiBaseUrl {
+  if (_envApiBaseUrl.isNotEmpty) return _envApiBaseUrl;
+  return kIsWeb ? 'http://localhost:3000/api/v1' : 'http://10.0.2.2:3000/api/v1';
+}
 
 const bool modeDev = bool.fromEnvironment('MODE_DEV', defaultValue: false);
 
@@ -16,11 +19,11 @@ class KlienApi {
   final SesiNotifier sesi;
   Completer<bool>? _refreshCompleter;
 
-  KlienApi({required this.sesi, String baseUrl = defaultApiBaseUrl, Dio? dioOverride})
+  KlienApi({required this.sesi, String? baseUrl, Dio? dioOverride})
       : dio = dioOverride ??
             Dio(
               BaseOptions(
-                baseUrl: baseUrl,
+                baseUrl: baseUrl ?? defaultApiBaseUrl,
                 connectTimeout: const Duration(seconds: 10),
                 receiveTimeout: const Duration(seconds: 15),
                 headers: {'Content-Type': 'application/json'},

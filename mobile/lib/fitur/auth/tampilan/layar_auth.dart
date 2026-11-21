@@ -47,8 +47,9 @@ class _LayarMasukState extends ConsumerState<LayarMasuk> {
         setState(() => _pesanGalat = pesan);
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => _pesanGalat = 'Gagal masuk. Periksa koneksi Anda.');
+      }
     } finally {
       if (mounted) setState(() => _memuat = false);
     }

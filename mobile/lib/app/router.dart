@@ -117,8 +117,9 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama>
             k.dio.get('/notifikasi', queryParameters: {'belum_dibaca': 'true'}),
       );
       final meta = res.data['meta'] as Map<String, dynamic>;
-      if (mounted)
+      if (mounted) {
         setState(() => _jumlahNotif = (meta['total'] as num).toInt());
+      }
     } catch (_) {}
   }
 

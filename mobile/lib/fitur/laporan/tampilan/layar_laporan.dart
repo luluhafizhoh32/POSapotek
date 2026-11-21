@@ -1,9 +1,8 @@
-import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../app/komponen.dart';
 import '../../../app/token.dart';
@@ -37,8 +36,9 @@ class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
     try {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(() => k.dio.get('/ringkasan'));
-      if (mounted)
+      if (mounted) {
         setState(() => _data = res.data['data'] as Map<String, dynamic>);
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _memuat = false);
@@ -183,11 +183,14 @@ class _LayarLaporanOperasionalState
         queryParameters: {'periode': periode, 'format': 'csv'},
       ),
     );
-    final dir = await getTemporaryDirectory();
-    final file = File(p.join(dir.path, 'golongan-khusus-$periode.csv'));
-    await file.writeAsString(res.data.toString());
-    await Share.shareXFiles([XFile(file.path)],
-        text: 'Mutasi Golongan Khusus $periode');
+    final bytes = Uint8List.fromList(utf8.encode(res.data.toString()));
+    await Share.shareXFiles(
+      [
+        XFile.fromData(bytes,
+            name: 'golongan-khusus-$periode.csv', mimeType: 'text/csv')
+      ],
+      text: 'Mutasi Golongan Khusus $periode',
+    );
   }
 
   @override

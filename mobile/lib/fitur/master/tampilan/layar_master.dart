@@ -34,9 +34,10 @@ class _LayarMasterBarangState extends ConsumerState<LayarMasterBarang> {
         () => k.dio.get('/barang',
             queryParameters: {if (_q.isNotEmpty) 'q': _q, 'per_halaman': 100}),
       );
-      if (mounted)
+      if (mounted) {
         setState(() =>
             _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _memuat = false);
@@ -218,9 +219,10 @@ class _LayarMasterPemasokState extends ConsumerState<LayarMasterPemasok> {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(
           () => k.dio.get('/pemasok', queryParameters: {'per_halaman': 100}));
-      if (mounted)
+      if (mounted) {
         setState(() =>
             _daftar = (res.data['data'] as List).cast<Map<String, dynamic>>());
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _memuat = false);

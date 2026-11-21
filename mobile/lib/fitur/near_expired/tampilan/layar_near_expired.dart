@@ -29,8 +29,9 @@ class _LayarNearExpiredState extends ConsumerState<LayarNearExpired> {
     try {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(() => k.dio.get('/near-expired'));
-      if (mounted)
+      if (mounted) {
         setState(() => _data = res.data['data'] as Map<String, dynamic>);
+      }
     } catch (_) {
     } finally {
       if (mounted) setState(() => _memuat = false);
