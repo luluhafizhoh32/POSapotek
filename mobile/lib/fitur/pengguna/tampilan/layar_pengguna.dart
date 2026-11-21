@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/komponen.dart';
+import '../../../app/komponen_v2.dart';
 import '../../../app/token.dart';
 import '../../../inti/format.dart';
 import '../../../inti/galat.dart';
@@ -111,23 +112,61 @@ class _LayarPenggunaState extends ConsumerState<LayarPengguna> {
         ],
       ),
       body: _memuat
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.separated(
-              padding: const EdgeInsets.all(TokenJarak.j4),
-              itemCount: _daftar.length,
-              separatorBuilder: (_, __) => const Divider(),
-              itemBuilder: (ctx, i) {
-                final u = _daftar[i];
-                final id = (u['id'] as num).toInt();
-                final aktif = u['aktif'] as bool;
-                final peran = u['peran'] as String;
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('${u['nama_lengkap']} (${u['username']})'),
-                  subtitle: Text('$peran · ${aktif ? 'Aktif' : 'Nonaktif'}'),
-                  trailing: peran == 'pemilik'
-                      ? null
-                      : PopupMenuButton<String>(
+          ? const SkeletonLoader()
+          : PageContainer(
+              maxWidth: 820,
+              child: ListView.separated(
+                itemCount: _daftar.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: TokenJarak.j2),
+                itemBuilder: (ctx, i) {
+                  final u = _daftar[i];
+                  final id = (u['id'] as num).toInt();
+                  final aktif = u['aktif'] as bool;
+                  final peran = u['peran'] as String;
+                  final nama = (u['nama_lengkap'] as String?) ?? '?';
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: TokenJarak.j4, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(TokenRadius.besar),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppShadows.card,
+                    ),
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.primaryTint,
+                        foregroundColor: AppColors.primary,
+                        child: Text(
+                          nama.isNotEmpty ? nama[0].toUpperCase() : '?',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      title: Text('$nama (${u['username']})',
+                          style: TokenTipografi.dasar
+                              .copyWith(fontWeight: FontWeight.w600)),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Wrap(
+                          spacing: 6,
+                          children: [
+                            StatusBadge(
+                                label: peran.toUpperCase(),
+                                varian: VarianStatus.info),
+                            StatusBadge(
+                              label: aktif ? 'Aktif' : 'Nonaktif',
+                              varian: aktif
+                                  ? VarianStatus.success
+                                  : VarianStatus.danger,
+                            ),
+                          ],
+                        ),
+                      ),
+                      trailing: peran == 'pemilik'
+                          ? null
+                          : PopupMenuButton<String>(
                           onSelected: (aksi) async {
                             final k = ref.read(klienApiProvider);
                             if (aksi == 'toggle') {
@@ -185,8 +224,10 @@ class _LayarPenggunaState extends ConsumerState<LayarPengguna> {
                             ),
                           ],
                         ),
-                );
-              },
+                    ),
+                  );
+                },
+              ),
             ),
     );
   }
@@ -227,23 +268,60 @@ class _LayarJejakAuditState extends ConsumerState<LayarJejakAudit> {
     return Scaffold(
       appBar: AppBar(title: const Text('Jejak Audit')),
       body: _memuat
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.separated(
-              padding: const EdgeInsets.all(TokenJarak.j4),
-              itemCount: _daftar.length,
-              separatorBuilder: (_, __) => const Divider(),
-              itemBuilder: (ctx, i) {
-                final a = _daftar[i];
-                final pengguna = a['pengguna'] as Map<String, dynamic>?;
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('${a['aksi']} (${a['hasil']})'),
-                  subtitle: Text(
-                    '${pengguna?['nama_lengkap'] ?? 'Sistem'} · ${formatTanggalJam(a['waktu'])}',
+          ? const SkeletonLoader()
+          : _daftar.isEmpty
+              ? const EmptyState(
+                  ikon: LucideIcons.shieldCheck,
+                  judul: 'Belum ada jejak audit',
+                  keterangan: 'Aktivitas penting pengguna tercatat otomatis.',
+                )
+              : PageContainer(
+                  maxWidth: 820,
+                  child: ListView.separated(
+                    itemCount: _daftar.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: TokenJarak.j2),
+                    itemBuilder: (ctx, i) {
+                      final a = _daftar[i];
+                      final pengguna = a['pengguna'] as Map<String, dynamic>?;
+                      final berhasil = a['hasil'] == 'berhasil';
+                      return Container(
+                        padding: const EdgeInsets.all(TokenJarak.j3),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius:
+                              BorderRadius.circular(TokenRadius.sedang),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('${a['aksi']}',
+                                      style: TokenTipografi.tabel.copyWith(
+                                          fontWeight: FontWeight.w600)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${pengguna?['nama_lengkap'] ?? 'Sistem'} · ${formatTanggalJam(a['waktu'])}',
+                                    style: TokenTipografi.keterangan,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            StatusBadge(
+                              label: '${a['hasil']}',
+                              varian: berhasil
+                                  ? VarianStatus.success
+                                  : VarianStatus.danger,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
+                ),
     );
   }
 }

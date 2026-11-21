@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/komponen.dart';
+import '../../../app/komponen_v2.dart';
 import '../../../app/token.dart';
 import '../../../inti/galat.dart';
 import '../../../inti/klien_api.dart';
@@ -67,34 +68,57 @@ class _LayarPengaturanState extends ConsumerState<LayarPengaturan> {
     return Scaffold(
       appBar: AppBar(title: const Text('Pengaturan Apotek')),
       body: _memuat
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(TokenJarak.j4),
-              children: [
-                if (_pesan != null) ...[
-                  PesanPos(jenis: JenisPesan.berhasil, teks: _pesan!),
-                  const SizedBox(height: TokenJarak.j3),
+          ? const SkeletonLoader(jumlahBaris: 5)
+          : PageContainer(
+              maxWidth: 720,
+              child: ListView(
+                children: [
+                  if (_pesan != null) ...[
+                    PesanPos(jenis: JenisPesan.berhasil, teks: _pesan!),
+                    const SizedBox(height: TokenJarak.j3),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.all(TokenJarak.j4),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(TokenRadius.besar),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppShadows.card,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SectionHeader(
+                            judul: 'Profil & Operasional Apotek'),
+                        const SizedBox(height: TokenJarak.j3),
+                        IsianTeksPos(
+                            controller: _namaCtrl, label: 'Nama Apotek'),
+                        const SizedBox(height: TokenJarak.j3),
+                        IsianTeksPos(
+                          controller: _batasCtrl,
+                          label: 'Batas Near-Expired (hari, 1-365)',
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: TokenJarak.j3),
+                        IsianTeksPos(
+                          controller: _tglLapCtrl,
+                          label: 'Tanggal Laporan Bulanan (1-28)',
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: TokenJarak.j3),
+                        IsianTeksPos(
+                            controller: _kepalaCtrl, label: 'Kepala Struk'),
+                        const SizedBox(height: TokenJarak.j3),
+                        IsianTeksPos(
+                            controller: _kakiCtrl, label: 'Kaki Struk'),
+                        const SizedBox(height: TokenJarak.j5),
+                        TombolPos(
+                            label: 'Simpan Pengaturan', onPressed: _simpan),
+                      ],
+                    ),
+                  ),
                 ],
-                IsianTeksPos(controller: _namaCtrl, label: 'Nama Apotek'),
-                const SizedBox(height: TokenJarak.j3),
-                IsianTeksPos(
-                  controller: _batasCtrl,
-                  label: 'Batas Near-Expired (hari, 1-365)',
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: TokenJarak.j3),
-                IsianTeksPos(
-                  controller: _tglLapCtrl,
-                  label: 'Tanggal Laporan Bulanan (1-28)',
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: TokenJarak.j3),
-                IsianTeksPos(controller: _kepalaCtrl, label: 'Kepala Struk'),
-                const SizedBox(height: TokenJarak.j3),
-                IsianTeksPos(controller: _kakiCtrl, label: 'Kaki Struk'),
-                const SizedBox(height: TokenJarak.j6),
-                TombolPos(label: 'Simpan Pengaturan', onPressed: _simpan),
-              ],
+              ),
             ),
     );
   }

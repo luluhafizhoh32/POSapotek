@@ -381,19 +381,52 @@ class ItemNavigasiPos {
   final IconData ikon;
   final Widget layar;
   final int badge;
+  final String? grup;
 
   const ItemNavigasiPos({
     required this.label,
     required this.ikon,
     required this.layar,
     this.badge = 0,
+    this.grup,
   });
 }
 
-/// Shell responsif lintas platform (C3):
+/// Wrapper konten responsif agar halaman tidak melar tak terkendali di desktop.
+class PageContainer extends StatelessWidget {
+  final Widget child;
+  final double maxWidth;
+  final EdgeInsetsGeometry? padding;
+
+  const PageContainer({
+    super.key,
+    required this.child,
+    this.maxWidth = 1080,
+    this.padding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    final pad = padding ??
+        EdgeInsets.symmetric(
+          horizontal: w >= 1024 ? 32 : (w >= 768 ? 24 : 16),
+          vertical: w >= 768 ? 20 : 16,
+        );
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Padding(padding: pad, child: child),
+      ),
+    );
+  }
+}
+
+/// Shell responsif lintas platform:
 /// - Ponsel (< 768 px): Bottom Navigation Bar
-/// - Tablet & Desktop (>= 768 px): Sidebar kiri permanen + ruang kerja lapang
-class ResponsiveScaffold extends StatelessWidget {
+/// - Tablet & Desktop (>= 768 px): Collapsible Sidebar terkelompok + ruang kerja lapang
+class ResponsiveScaffold extends StatefulWidget {
   final List<ItemNavigasiPos> tabs;
   final int indeksAktif;
   final ValueChanged<int> onPilihTab;
@@ -410,13 +443,20 @@ class ResponsiveScaffold extends StatelessWidget {
   });
 
   @override
+  State<ResponsiveScaffold> createState() => _ResponsiveScaffoldState();
+}
+
+class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
+  bool _ciutkan = false;
+
+  @override
   Widget build(BuildContext context) {
     final lebar = MediaQuery.sizeOf(context).width;
     final desktop = lebar >= 768;
 
     if (!desktop) {
       return Scaffold(
-        body: tabs[indeksAktif].layar,
+        body: widget.tabs[widget.indeksAktif].layar,
         bottomNavigationBar: Container(
           height: TokenUkuran.tinggiBilahBawah,
           decoration: const BoxDecoration(
@@ -425,9 +465,9 @@ class ResponsiveScaffold extends StatelessWidget {
           ),
           child: NavigationBar(
             height: TokenUkuran.tinggiBilahBawah,
-            selectedIndex: indeksAktif,
-            onDestinationSelected: onPilihTab,
-            destinations: tabs
+            selectedIndex: widget.indeksAktif,
+            onDestinationSelected: widget.onPilihTab,
+            destinations: widget.tabs
                 .map(
                   (t) => NavigationDestination(
                     icon: t.badge > 0
@@ -442,15 +482,17 @@ class ResponsiveScaffold extends StatelessWidget {
       );
     }
 
-    // Tablet & Desktop: Sidebar kiri bersih ala Linear/Stripe
-    final lebarSidebar = lebar >= 1024 ? 248.0 : 84.0;
-    final tampilTeks = lebar >= 1024;
+    // Tablet & Desktop: Collapsible Sidebar terkelompok ala Linear/Stripe
+    final tampilTeks = lebar >= 1024 && !_ciutkan;
+    final lebarSidebar = tampilTeks ? 252.0 : 88.0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Row(
         children: [
-          Container(
+          AnimatedContainer(
+            duration: AppMotion.normal,
+            curve: AppMotion.curve,
             width: lebarSidebar,
             decoration: const BoxDecoration(
               color: AppColors.surface,
@@ -461,13 +503,13 @@ class ResponsiveScaffold extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 12, 12),
                     child: Row(
                       mainAxisAlignment: tampilTeks
                           ? MainAxisAlignment.start
                           : MainAxisAlignment.center,
                       children: [
-                        const LogoPharmaPos(ukuran: 36),
+                        const LogoPharmaPos(ukuran: 34),
                         if (tampilTeks) ...[
                           const SizedBox(width: 10),
                           Expanded(
@@ -480,7 +522,7 @@ class ResponsiveScaffold extends StatelessWidget {
                                       .copyWith(fontWeight: FontWeight.w700),
                                 ),
                                 Text(
-                                  namaApotek,
+                                  widget.namaApotek,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TokenTipografi.keterangan,
@@ -488,135 +530,177 @@ class ResponsiveScaffold extends StatelessWidget {
                               ],
                             ),
                           ),
+                          IconButton(
+                            tooltip: 'Ciutkan sidebar',
+                            onPressed: () => setState(() => _ciutkan = true),
+                            icon: const Icon(LucideIcons.panelLeftClose,
+                                size: 18, color: AppColors.textSecondary),
+                          ),
                         ],
                       ],
                     ),
                   ),
+                  if (!tampilTeks && lebar >= 1024)
+                    Center(
+                      child: IconButton(
+                        tooltip: 'Lebarkan sidebar',
+                        onPressed: () => setState(() => _ciutkan = false),
+                        icon: const Icon(LucideIcons.panelLeftOpen,
+                            size: 18, color: AppColors.textSecondary),
+                      ),
+                    ),
                   if (tampilTeks)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: StatusBadge(
-                          label: labelPeran,
+                          label: widget.labelPeran,
                           varian: VarianStatus.info,
                           ikon: LucideIcons.shieldCheck,
                         ),
                       ),
                     ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   const Divider(),
                   const SizedBox(height: 8),
                   Expanded(
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
-                      itemCount: tabs.length,
+                      itemCount: widget.tabs.length,
                       itemBuilder: (ctx, i) {
-                        final t = tabs[i];
-                        final aktif = i == indeksAktif;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: InkWell(
-                            borderRadius:
-                                BorderRadius.circular(TokenRadius.sedang),
-                            onTap: () => onPilihTab(i),
-                            child: Container(
-                              constraints: BoxConstraints(
-                                minHeight: tampilTeks ? 46 : 56,
+                        final t = widget.tabs[i];
+                        final aktif = i == widget.indeksAktif;
+                        final prevGrup = i > 0 ? widget.tabs[i - 1].grup : null;
+                        final tampilHeaderGrup =
+                            tampilTeks && t.grup != null && t.grup != prevGrup;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (tampilHeaderGrup)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(10, 12, 10, 6),
+                                child: Text(
+                                  t.grup!.toUpperCase(),
+                                  style: TokenTipografi.keterangan.copyWith(
+                                    fontSize: 10.5,
+                                    letterSpacing: 0.8,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
                               ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: tampilTeks ? 12 : 4,
-                                vertical: tampilTeks ? 0 : 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: aktif
-                                    ? AppColors.primaryTint
-                                    : Colors.transparent,
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: InkWell(
                                 borderRadius:
                                     BorderRadius.circular(TokenRadius.sedang),
-                              ),
-                              child: tampilTeks
-                                  ? Row(
-                                      children: [
-                                        t.badge > 0
-                                            ? Badge(
-                                                label: Text('${t.badge}'),
-                                                child: Icon(
-                                                  t.ikon,
-                                                  size: 20,
+                                onTap: () => widget.onPilihTab(i),
+                                child: Container(
+                                  constraints: BoxConstraints(
+                                    minHeight: tampilTeks ? 44 : 56,
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: tampilTeks ? 12 : 4,
+                                    vertical: tampilTeks ? 0 : 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: aktif
+                                        ? AppColors.primaryTint
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(
+                                        TokenRadius.sedang),
+                                  ),
+                                  child: tampilTeks
+                                      ? Row(
+                                          children: [
+                                            t.badge > 0
+                                                ? Badge(
+                                                    label: Text('${t.badge}'),
+                                                    child: Icon(
+                                                      t.ikon,
+                                                      size: 19,
+                                                      color: aktif
+                                                          ? AppColors.primary
+                                                          : AppColors
+                                                              .textSecondary,
+                                                    ),
+                                                  )
+                                                : Icon(
+                                                    t.ikon,
+                                                    size: 19,
+                                                    color: aktif
+                                                        ? AppColors.primary
+                                                        : AppColors
+                                                            .textSecondary,
+                                                  ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                t.label,
+                                                style: TokenTipografi.tabel
+                                                    .copyWith(
+                                                  fontWeight: aktif
+                                                      ? FontWeight.w700
+                                                      : FontWeight.w500,
                                                   color: aktif
                                                       ? AppColors.primary
-                                                      : AppColors.textSecondary,
+                                                      : AppColors.textPrimary,
                                                 ),
-                                              )
-                                            : Icon(
-                                                t.ikon,
-                                                size: 20,
-                                                color: aktif
-                                                    ? AppColors.primary
-                                                    : AppColors.textSecondary,
                                               ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            t.label,
-                                            style:
-                                                TokenTipografi.tabel.copyWith(
-                                              fontWeight: aktif
-                                                  ? FontWeight.w700
-                                                  : FontWeight.w500,
-                                              color: aktif
-                                                  ? AppColors.primary
-                                                  : AppColors.textPrimary,
                                             ),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        t.badge > 0
-                                            ? Badge(
-                                                label: Text('${t.badge}'),
-                                                child: Icon(
-                                                  t.ikon,
-                                                  size: 20,
-                                                  color: aktif
-                                                      ? AppColors.primary
-                                                      : AppColors.textSecondary,
-                                                ),
-                                              )
-                                            : Icon(
-                                                t.ikon,
-                                                size: 20,
+                                          ],
+                                        )
+                                      : Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            t.badge > 0
+                                                ? Badge(
+                                                    label: Text('${t.badge}'),
+                                                    child: Icon(
+                                                      t.ikon,
+                                                      size: 20,
+                                                      color: aktif
+                                                          ? AppColors.primary
+                                                          : AppColors
+                                                              .textSecondary,
+                                                    ),
+                                                  )
+                                                : Icon(
+                                                    t.ikon,
+                                                    size: 20,
+                                                    color: aktif
+                                                        ? AppColors.primary
+                                                        : AppColors
+                                                            .textSecondary,
+                                                  ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              t.label,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.center,
+                                              style: TokenTipografi.keterangan
+                                                  .copyWith(
+                                                fontSize: 10,
+                                                fontWeight: aktif
+                                                    ? FontWeight.w700
+                                                    : FontWeight.w500,
                                                 color: aktif
                                                     ? AppColors.primary
                                                     : AppColors.textSecondary,
                                               ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          t.label,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center,
-                                          style: TokenTipografi.keterangan
-                                              .copyWith(
-                                            fontSize: 10,
-                                            fontWeight: aktif
-                                                ? FontWeight.w700
-                                                : FontWeight.w500,
-                                            color: aktif
-                                                ? AppColors.primary
-                                                : AppColors.textSecondary,
-                                          ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         );
                       },
                     ),
@@ -634,7 +718,7 @@ class ResponsiveScaffold extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: tabs[indeksAktif].layar,
+            child: widget.tabs[widget.indeksAktif].layar,
           ),
         ],
       ),

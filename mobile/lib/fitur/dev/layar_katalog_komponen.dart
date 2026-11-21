@@ -11,7 +11,7 @@ class LayarKatalogKomponen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Katalog Komponen PharmaPOS v2.1')),
+      appBar: AppBar(title: const Text('Katalog Komponen PharmaPOS')),
       body: ListView(
         padding: const EdgeInsets.all(TokenJarak.j4),
         children: [

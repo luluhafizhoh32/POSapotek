@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/komponen.dart';
+import '../../../app/komponen_v2.dart';
 import '../../../app/token.dart';
 import '../../../inti/format.dart';
 import '../../../inti/klien_api.dart';
@@ -39,37 +40,108 @@ class _LayarNearExpiredState extends ConsumerState<LayarNearExpired> {
   }
 
   Widget _bagian(String judul, List list, String statusLencana, bool isSg) {
+    final isExpired = statusLencana == 'kedaluwarsa';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(child: Text(judul, style: TokenTipografi.seksi)),
-            LencanaStatusPos(status: statusLencana),
+            Text(judul, style: TokenTipografi.subjudul),
+            StatusBadge(
+              label: '${list.length} batch',
+              varian: isExpired ? VarianStatus.danger : VarianStatus.warning,
+            ),
           ],
         ),
-        const SizedBox(height: TokenJarak.j2),
+        const SizedBox(height: TokenJarak.j3),
         if (list.isEmpty)
-          const Text('Tidak ada batch.')
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(TokenJarak.j4),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(TokenRadius.besar),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: const Text('Tidak ada batch pada kategori ini.',
+                style: TokenTipografi.keterangan),
+          )
         else
           ...list.map((raw) {
             final item = raw as Map<String, dynamic>;
             final brg = item['barang'] as Map<String, dynamic>;
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text('${brg['nama']} (${item['nomor_batch']})'),
-              subtitle: Text(
-                'Exp: ${formatTanggal(item['tanggal_kedaluwarsa'])} (${item['sisa_hari']} hari) · Stok: ${item['stok']} · ${formatRupiah((item['nilai'] as num).toInt())}',
+            final sisaHari = (item['sisa_hari'] as num).toInt();
+            return Container(
+              margin: const EdgeInsets.only(bottom: TokenJarak.j2),
+              padding: const EdgeInsets.all(TokenJarak.j3),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(TokenRadius.besar),
+                border: Border.all(color: AppColors.border),
+                boxShadow: AppShadows.card,
               ),
-              trailing: isSg
-                  ? TextButton(
+              child: Row(
+                children: [
+                  Container(
+                    width: 54,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color:
+                          isExpired ? AppColors.dangerBg : AppColors.warningBg,
+                      borderRadius: BorderRadius.circular(TokenRadius.sedang),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          sisaHari < 0 ? 'ED' : '$sisaHari',
+                          style: TokenTipografi.angkaTabular(
+                                  TokenTipografi.subjudul)
+                              .copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isExpired
+                                ? AppColors.danger
+                                : AppColors.warning,
+                          ),
+                        ),
+                        Text(
+                          sisaHari < 0 ? 'Lewat' : 'hari',
+                          style: TokenTipografi.keterangan.copyWith(
+                            fontSize: 10,
+                            color: isExpired
+                                ? AppColors.danger
+                                : AppColors.warning,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: TokenJarak.j3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${brg['nama']} (${item['nomor_batch']})',
+                          style: TokenTipografi.dasar
+                              .copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Exp ${formatTanggal(item['tanggal_kedaluwarsa'])} · Stok ${item['stok']} · Risiko ${formatRupiah((item['nilai'] as num).toInt())}',
+                          style: TokenTipografi.keterangan,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isSg)
+                    TextButton(
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => LayarBuatPengajuan(
-                              alasanAwal: (item['sisa_hari'] as num) < 0
-                                  ? 'kedaluwarsa'
-                                  : 'rusak',
+                              alasanAwal:
+                                  sisaHari < 0 ? 'kedaluwarsa' : 'rusak',
                               batchIdAwal: (item['batch_id'] as num).toInt(),
                               jumlahAwal: (item['stok'] as num).toInt(),
                             ),
@@ -77,8 +149,9 @@ class _LayarNearExpiredState extends ConsumerState<LayarNearExpired> {
                         );
                       },
                       child: const Text('Ajukan'),
-                    )
-                  : null,
+                    ),
+                ],
+              ),
             );
           }),
       ],

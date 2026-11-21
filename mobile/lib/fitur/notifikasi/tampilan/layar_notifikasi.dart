@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import '../../../app/komponen.dart';
+import '../../../app/komponen_v2.dart';
 import '../../../app/token.dart';
 import '../../../inti/antrean.dart';
 import '../../../inti/drift_db.dart';
@@ -61,40 +62,90 @@ class _LayarNotifikasiState extends ConsumerState<LayarNotifikasi> {
         ],
       ),
       body: _memuat
-          ? const Center(child: CircularProgressIndicator())
+          ? const SkeletonLoader()
           : _daftar.isEmpty
-              ? const Center(child: Text('Tidak ada notifikasi.'))
-              : ListView.separated(
-                  padding: const EdgeInsets.all(TokenJarak.j4),
-                  itemCount: _daftar.length,
-                  separatorBuilder: (_, __) => const Divider(),
-                  itemBuilder: (ctx, i) {
-                    final n = _daftar[i];
-                    final belumBaca = n['dibaca_pada'] == null;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      tileColor: belumBaca ? TokenLatar.terpilih : null,
-                      title: Text(
-                        n['judul'] as String,
-                        style: TokenTipografi.dasar.copyWith(
-                          fontWeight:
-                              belumBaca ? FontWeight.w700 : FontWeight.w400,
+              ? const EmptyState(
+                  ikon: LucideIcons.bellOff,
+                  judul: 'Tidak ada notifikasi',
+                  keterangan:
+                      'Peringatan near-expired, stok menipis, dan pengesahan akan muncul di sini.',
+                )
+              : PageContainer(
+                  maxWidth: 760,
+                  child: ListView.separated(
+                    itemCount: _daftar.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: TokenJarak.j2),
+                    itemBuilder: (ctx, i) {
+                      final n = _daftar[i];
+                      final belumBaca = n['dibaca_pada'] == null;
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(TokenRadius.besar),
+                        onTap: () async {
+                          if (belumBaca) {
+                            final k = ref.read(klienApiProvider);
+                            await k.kirim(() =>
+                                k.dio.post('/notifikasi/${n['id']}/dibaca'));
+                            await _muat();
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(TokenJarak.j4),
+                          decoration: BoxDecoration(
+                            color: belumBaca
+                                ? AppColors.primaryTint
+                                : AppColors.surface,
+                            borderRadius:
+                                BorderRadius.circular(TokenRadius.besar),
+                            border: Border.all(
+                              color: belumBaca
+                                  ? AppColors.primarySoft
+                                  : AppColors.border,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  if (belumBaca)
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      margin: const EdgeInsets.only(right: 8),
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  Expanded(
+                                    child: Text(
+                                      n['judul'] as String,
+                                      style: TokenTipografi.dasar.copyWith(
+                                        fontWeight: belumBaca
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    formatTanggalJam(n['dibuat_pada']),
+                                    style: TokenTipografi.keterangan,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                n['isi'] as String,
+                                style: TokenTipografi.tabel
+                                    .copyWith(color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      subtitle: Text(
-                        '${n['isi']}\n${formatTanggalJam(n['dibuat_pada'])}',
-                        style: TokenTipografi.keterangan,
-                      ),
-                      onTap: () async {
-                        if (belumBaca) {
-                          final k = ref.read(klienApiProvider);
-                          await k.kirim(() =>
-                              k.dio.post('/notifikasi/${n['id']}/dibaca'));
-                          await _muat();
-                        }
-                      },
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
     );
   }
@@ -108,7 +159,8 @@ class LayarAkun extends ConsumerWidget {
       await tampilkanDialogPos<void>(
         context: context,
         judul: 'Printer Bluetooth',
-        isi: const Text('Printer termal Bluetooth hanya tersedia pada aplikasi Android.'),
+        isi: const Text(
+            'Printer termal Bluetooth hanya tersedia pada aplikasi Android.'),
         tombol: [
           TombolPos(
             label: 'Tutup',

@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../app/komponen.dart';
+import '../../../app/komponen_v2.dart';
 import '../../../app/token.dart';
 import '../../../inti/antrean.dart';
 import '../../../inti/format.dart';
@@ -204,7 +205,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
         TextEditingController(text: _resep?['nomor_resep'] ?? 'RSP-001');
     final dokterCtrl = TextEditingController(
         text: _resep?['nama_dokter'] ?? 'dr. Rina Kusuma, Sp.PD');
-    final pasienCtrl = TextEditingController(text: _resep?['nama_pasien'] ?? '');
+    final pasienCtrl =
+        TextEditingController(text: _resep?['nama_pasien'] ?? '');
     final tglCtrl = TextEditingController(
       text: _resep?['tanggal_resep'] ??
           DateTime.now().toIso8601String().substring(0, 10),
@@ -357,12 +359,11 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                     jenis: JenisTombol.sekunder,
                     onPressed: printerMac == null
                         ? null
-                        : () =>
-                            ref.read(pencetakProvider).cetakBuktiSementara(
-                                  baris: _barisTertunda,
-                                  total: _totalTertunda,
-                                  alamatMac: printerMac,
-                                ),
+                        : () => ref.read(pencetakProvider).cetakBuktiSementara(
+                              baris: _barisTertunda,
+                              total: _totalTertunda,
+                              alamatMac: printerMac,
+                            ),
                   ),
                 ] else if (_hasilBerhasil != null) ...[
                   Center(
@@ -420,9 +421,9 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                         const SizedBox(height: TokenJarak.j1),
                         Text(
                           'Total: ${formatRupiah(_hasilBerhasil!.total)}',
-                          style: TokenTipografi.angkaTabular(
-                                  TokenTipografi.judul)
-                              .copyWith(color: TokenAksi.utama),
+                          style:
+                              TokenTipografi.angkaTabular(TokenTipografi.judul)
+                                  .copyWith(color: TokenAksi.utama),
                         ),
                         if (_hasilBerhasil!.kembalian != null) ...[
                           const SizedBox(height: TokenJarak.j1),
@@ -573,9 +574,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                               size: 16,
                               color: TokenAksi.utama,
                             ),
-                            label: Text(_pelangganMember
-                                ? 'Member Aktif'
-                                : '+ Member'),
+                            label: Text(
+                                _pelangganMember ? 'Member Aktif' : '+ Member'),
                             onPressed: () => setState(
                                 () => _pelangganMember = !_pelangganMember),
                           ),
@@ -1094,7 +1094,8 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
             Wrap(
               spacing: TokenJarak.j2,
               runSpacing: TokenJarak.j2,
-              children: ['tunai', 'qris', 'debit', 'transfer', 'ewallet'].map((c) {
+              children:
+                  ['tunai', 'qris', 'debit', 'transfer', 'ewallet'].map((c) {
                 final terpilih = _cara == c;
                 final label = switch (c) {
                   'tunai' => 'Tunai',
@@ -1245,48 +1246,86 @@ class _LayarRiwayatPenjualanState extends ConsumerState<LayarRiwayatPenjualan> {
       body: RefreshIndicator(
         onRefresh: _muat,
         child: _memuat
-            ? const Center(child: CircularProgressIndicator())
+            ? const SkeletonLoader()
             : _daftar.isEmpty
-                ? const Center(child: Text('Belum ada penjualan hari ini.'))
-                : ListView.separated(
-                    padding: const EdgeInsets.all(TokenJarak.j4),
-                    itemCount: _daftar.length,
-                    separatorBuilder: (_, __) => const Divider(),
-                    itemBuilder: (ctx, i) {
-                      final r = _daftar[i];
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(r['nomor'] as String,
-                            style: TokenTipografi.dasar),
-                        subtitle: Text(
-                          '${formatJam(r['waktu'])} · ${(r['cara_bayar'] as String).toUpperCase()}',
-                          style: TokenTipografi.keterangan,
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              formatRupiah((r['total'] as num).toInt()),
-                              style: TokenTipografi.angkaTabular(
-                                      TokenTipografi.dasar)
-                                  .copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            if (printerMac != null)
-                              IconButton(
-                                icon: const Icon(LucideIcons.printer),
-                                onPressed: () async {
-                                  final struk = await ref
-                                      .read(penjualanRepositoriProvider)
-                                      .ambilStruk((r['id'] as num).toInt());
-                                  await ref
-                                      .read(pencetakProvider)
-                                      .cetakStruk(struk, printerMac);
-                                },
+                ? const EmptyState(
+                    ikon: LucideIcons.receipt,
+                    judul: 'Belum ada transaksi',
+                    keterangan:
+                        'Riwayat penjualan hari ini akan muncul secara otomatis setelah kasir menyelesaikan pembayaran.',
+                  )
+                : PageContainer(
+                    maxWidth: 860,
+                    child: ListView.separated(
+                      itemCount: _daftar.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: TokenJarak.j2),
+                      itemBuilder: (ctx, i) {
+                        final r = _daftar[i];
+                        final cara = (r['cara_bayar'] as String).toUpperCase();
+                        return Container(
+                          padding: const EdgeInsets.all(TokenJarak.j3),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius:
+                                BorderRadius.circular(TokenRadius.besar),
+                            border: Border.all(color: AppColors.border),
+                            boxShadow: AppShadows.card,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      r['nomor'] as String,
+                                      style: TokenTipografi.dasar.copyWith(
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Wrap(
+                                      spacing: 8,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      children: [
+                                        Text(formatJam(r['waktu']),
+                                            style: TokenTipografi.keterangan),
+                                        StatusBadge(
+                                          label: cara,
+                                          varian: cara == 'TUNAI'
+                                              ? VarianStatus.success
+                                              : VarianStatus.info,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                          ],
-                        ),
-                      );
-                    },
+                              Text(
+                                formatRupiah((r['total'] as num).toInt()),
+                                style: TokenTipografi.angkaTabular(
+                                        TokenTipografi.subjudul)
+                                    .copyWith(color: AppColors.primary),
+                              ),
+                              if (printerMac != null)
+                                IconButton(
+                                  icon: const Icon(LucideIcons.printer,
+                                      color: AppColors.primary),
+                                  onPressed: () async {
+                                    final struk = await ref
+                                        .read(penjualanRepositoriProvider)
+                                        .ambilStruk((r['id'] as num).toInt());
+                                    await ref
+                                        .read(pencetakProvider)
+                                        .cetakStruk(struk, printerMac);
+                                  },
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
       ),
     );

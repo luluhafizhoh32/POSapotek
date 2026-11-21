@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/komponen.dart';
+import '../../../app/komponen_v2.dart';
 import '../../../app/token.dart';
 import '../../../inti/format.dart';
 import '../../../inti/galat.dart';
@@ -153,44 +154,121 @@ class _LayarMasterBarangState extends ConsumerState<LayarMasterBarang> {
                 icon: const Icon(LucideIcons.plus), onPressed: _tambahBarang),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(TokenJarak.j3),
-            child: IsianTeksPos(
+      body: PageContainer(
+        child: Column(
+          children: [
+            IsianTeksPos(
               label: 'Cari Barang',
-              placeholder: 'Nama atau kode...',
+              placeholder: 'Nama, kode, atau barcode...',
               onChanged: (v) {
                 _q = v;
                 _muat();
               },
             ),
-          ),
-          Expanded(
-            child: _memuat
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.separated(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: TokenJarak.j4),
-                    itemCount: _daftar.length,
-                    separatorBuilder: (_, __) => const Divider(),
-                    itemBuilder: (ctx, i) {
-                      final b = _daftar[i];
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(b['nama'] as String),
-                        subtitle: Text(
-                            '${b['kode']} · ${b['satuan']} · Stok ${b['stok_total']}'),
-                        trailing: Text(
-                          formatRupiah((b['harga_jual'] as num).toInt()),
-                          style:
-                              TokenTipografi.angkaTabular(TokenTipografi.dasar),
+            const SizedBox(height: TokenJarak.j4),
+            Expanded(
+              child: _memuat
+                  ? const SkeletonLoader()
+                  : _daftar.isEmpty
+                      ? EmptyState(
+                          ikon: LucideIcons.packageOpen,
+                          judul: 'Belum ada produk',
+                          keterangan:
+                              'Tambahkan produk obat pertama untuk mulai mengelola stok dan penjualan.',
+                          labelTombol: bolehEdit ? 'Tambah Barang' : null,
+                          onAksi: bolehEdit ? _tambahBarang : null,
+                        )
+                      : ListView.separated(
+                          itemCount: _daftar.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: TokenJarak.j2),
+                          itemBuilder: (ctx, i) {
+                            final b = _daftar[i];
+                            final stok =
+                                ((b['stok_total'] ?? 0) as num).toInt();
+                            final min =
+                                ((b['stok_minimum'] ?? 0) as num).toInt();
+                            final menipis = stok <= min;
+                            return Container(
+                              padding: const EdgeInsets.all(TokenJarak.j3),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius:
+                                    BorderRadius.circular(TokenRadius.besar),
+                                border: Border.all(color: AppColors.border),
+                                boxShadow: AppShadows.card,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 42,
+                                    height: 42,
+                                    decoration: BoxDecoration(
+                                      color: menipis
+                                          ? AppColors.dangerBg
+                                          : AppColors.primaryTint,
+                                      borderRadius: BorderRadius.circular(
+                                          TokenRadius.sedang),
+                                    ),
+                                    child: Icon(
+                                      LucideIcons.pill,
+                                      size: 20,
+                                      color: menipis
+                                          ? AppColors.danger
+                                          : AppColors.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: TokenJarak.j3),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          b['nama'] as String,
+                                          style: TokenTipografi.dasar.copyWith(
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Wrap(
+                                          spacing: 6,
+                                          runSpacing: 4,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
+                                          children: [
+                                            Text(
+                                              '${b['kode']} · ${b['satuan']} · Stok $stok',
+                                              style: TokenTipografi.keterangan,
+                                            ),
+                                            StatusBadge(
+                                              label: menipis
+                                                  ? 'Stok Menipis'
+                                                  : 'Tersedia',
+                                              varian: menipis
+                                                  ? VarianStatus.danger
+                                                  : VarianStatus.success,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: TokenJarak.j2),
+                                  Text(
+                                    formatRupiah(
+                                        (b['harga_jual'] as num).toInt()),
+                                    style: TokenTipografi.angkaTabular(
+                                            TokenTipografi.subjudul)
+                                        .copyWith(color: AppColors.primary),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

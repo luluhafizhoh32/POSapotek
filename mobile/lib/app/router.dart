@@ -163,16 +163,30 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama>
       onPilihTab: (i) => setState(() => _indeks = i),
       namaApotek: pengguna.apotekNama,
       labelPeran: pengguna.labelPeran,
-      tabs: tabs
-          .map(
-            (t) => ItemNavigasiPos(
-              label: t.label,
-              ikon: t.ikon,
-              layar: t.layar,
-              badge: t.badge,
-            ),
-          )
-          .toList(),
+      tabs: tabs.map((t) {
+        final grup = switch (t.label) {
+          'Beranda' => 'Ringkasan',
+          'Penjualan' ||
+          'Riwayat' ||
+          'Antrean' ||
+          'Penerimaan' ||
+          'Opname' ||
+          'Pengajuan' ||
+          'Pengesahan' ||
+          'Near-expired' =>
+            'Operasional',
+          'Laporan' || 'Keuangan' => 'Keuangan & Laporan',
+          'Cek AI' || 'AI Insight' => 'Kecerdasan AI',
+          _ => 'Sistem',
+        };
+        return ItemNavigasiPos(
+          label: t.label,
+          ikon: t.ikon,
+          layar: t.layar,
+          badge: t.badge,
+          grup: grup,
+        );
+      }).toList(),
     );
   }
 
@@ -440,22 +454,58 @@ class _LayarLainnya extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Menu Lainnya')),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(TokenJarak.j4),
-        itemCount: item.length,
-        separatorBuilder: (_, __) => const Divider(),
-        itemBuilder: (ctx, i) {
-          final e = item[i];
-          return ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(e.$2),
-            title: Text(e.$1, style: TokenTipografi.dasar),
-            trailing: const Icon(LucideIcons.chevronRight),
-            onTap: () => Navigator.of(ctx)
-                .push(MaterialPageRoute(builder: (_) => e.$3())),
-          );
-        },
+      appBar: AppBar(title: const Text('Menu & Pengaturan')),
+      body: PageContainer(
+        child: ListView.separated(
+          itemCount: item.length,
+          separatorBuilder: (_, __) => const SizedBox(height: TokenJarak.j2),
+          itemBuilder: (ctx, i) {
+            final e = item[i];
+            return Material(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(TokenRadius.sedang),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(TokenRadius.sedang),
+                onTap: () => Navigator.of(ctx)
+                    .push(MaterialPageRoute(builder: (_) => e.$3())),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: TokenJarak.j4,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(TokenRadius.sedang),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryTint,
+                          borderRadius:
+                              BorderRadius.circular(TokenRadius.kecil),
+                        ),
+                        child: Icon(e.$2, size: 19, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: TokenJarak.j3),
+                      Expanded(
+                        child: Text(
+                          e.$1,
+                          style: TokenTipografi.dasar
+                              .copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const Icon(LucideIcons.chevronRight,
+                          size: 18, color: AppColors.textMuted),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

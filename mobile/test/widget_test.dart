@@ -316,7 +316,7 @@ void main() {
   });
 
   testWidgets(
-      'Responsif v2.1: Katalog komponen tampil bersih pada 360x800 dan 1440x900',
+      'Responsif: Katalog komponen tampil bersih pada 360x800 dan 1440x900',
       (tester) async {
     for (final size in const [Size(360, 800), Size(1440, 900)]) {
       tester.view.physicalSize = size;
@@ -330,7 +330,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Katalog Komponen PharmaPOS v2.1'), findsOneWidget);
+      expect(find.text('Katalog Komponen PharmaPOS'), findsOneWidget);
       expect(find.text('Penjualan hari ini'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
