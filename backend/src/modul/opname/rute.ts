@@ -9,6 +9,8 @@ import {
   daftarOpnameLayanan,
   simpanOpnameLayanan,
   skemaSimpanOpname,
+  skemaTinjauOpname,
+  tinjauOpnameLayanan,
 } from './layanan.js';
 
 const skemaIdParam = z.object({ id: z.coerce.number().int().positive() });
@@ -19,6 +21,12 @@ export async function ruteOpname(app: FastifyInstance): Promise<void> {
 
   app.get('/opname/daftar-batch', { preHandler: hanyaGudang }, async (request, reply) => {
     const data = await daftarBatchOpnameLayanan(request.pengguna!.apotekId);
+    return reply.status(200).send({ data });
+  });
+
+  app.post('/opname/tinjau', { preHandler: hanyaGudang }, async (request, reply) => {
+    const body = validasiZod(skemaTinjauOpname, request.body);
+    const data = await tinjauOpnameLayanan(request.pengguna!.apotekId, body);
     return reply.status(200).send({ data });
   });
 

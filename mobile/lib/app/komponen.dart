@@ -773,6 +773,18 @@ class LencanaStatusPos extends StatelessWidget {
           TokenStatus.peringatanLatar,
           LucideIcons.clock
         ),
+      'sudah_dihitung' => (
+          'Sudah dihitung',
+          TokenStatus.berhasilTeks,
+          TokenStatus.berhasilLatar,
+          LucideIcons.checkCircle2
+        ),
+      'belum_dihitung' => (
+          'Belum dihitung',
+          TokenStatus.informasiTeks,
+          TokenStatus.informasiLatar,
+          LucideIcons.clock
+        ),
       'disahkan' => (
           'Disahkan',
           TokenStatus.berhasilTeks,

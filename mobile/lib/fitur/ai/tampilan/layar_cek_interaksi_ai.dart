@@ -41,8 +41,22 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
 
   bool _memuat = false;
   bool _terverifikasi = false;
+  DateTime? _waktuVerifikasi;
   String? _galat;
   Map<String, dynamic>? _hasil;
+
+  void _resetResepBaru() {
+    setState(() {
+      _pasienCtrl.clear();
+      _dokterCtrl.clear();
+      _obatInputCtrl.clear();
+      _daftarObat.clear();
+      _hasil = null;
+      _terverifikasi = false;
+      _waktuVerifikasi = null;
+      _galat = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -107,6 +121,136 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
   Widget build(BuildContext context) {
     final peringatan =
         (_hasil?['peringatan'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+    if (_terverifikasi) {
+      final waktu = _waktuVerifikasi ?? DateTime.now();
+      final jamStr =
+          '${waktu.hour.toString().padLeft(2, '0')}:${waktu.minute.toString().padLeft(2, '0')}';
+
+      return Scaffold(
+        appBar: const AppBarPharma(
+          peranLabel: 'APOTEKER',
+          subjudul: 'Hasil Verifikasi Resep',
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(TokenJarak.j4),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(TokenJarak.j4),
+              decoration: BoxDecoration(
+                color: TokenStatus.berhasilLatar,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: TokenStatus.berhasilTeks.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Column(
+                children: [
+                  const Icon(
+                    LucideIcons.checkCircle2,
+                    size: 44,
+                    color: TokenStatus.berhasilTeks,
+                  ),
+                  const SizedBox(height: TokenJarak.j2),
+                  Text(
+                    'Resep Terverifikasi Apoteker',
+                    textAlign: TextAlign.center,
+                    style: TokenTipografi.seksi.copyWith(
+                      color: TokenStatus.berhasilTeks,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'No. Resep: R-2458 · Diverifikasi pukul $jamStr',
+                    style: TokenTipografi.keterangan.copyWith(
+                      color: TokenStatus.berhasilTeks,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: TokenJarak.j4),
+            Container(
+              padding: const EdgeInsets.all(TokenJarak.j4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: TokenGaris.pemisah),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Ringkasan Resep', style: TokenTipografi.seksi),
+                  const SizedBox(height: TokenJarak.j2),
+                  Text(
+                    'Dokter: ${_dokterCtrl.text.trim().isEmpty ? '-' : _dokterCtrl.text.trim()}',
+                    style: TokenTipografi.dasar,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Pasien: ${_pasienCtrl.text.trim().isEmpty ? '-' : _pasienCtrl.text.trim()}',
+                    style: TokenTipografi.dasar,
+                  ),
+                  const Divider(height: TokenJarak.j4),
+                  Text(
+                    'Daftar Obat (${_daftarObat.length} item)',
+                    style: TokenTipografi.tabel.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: TokenTeks.sekunder,
+                    ),
+                  ),
+                  const SizedBox(height: TokenJarak.j2),
+                  ..._daftarObat.map(
+                    (o) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${o.nama} · ${o.dosis}',
+                              style: TokenTipografi.tabel,
+                            ),
+                          ),
+                          Text(
+                            o.jumlah,
+                            style: TokenTipografi.tabel.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: TokenTeks.sekunder,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Divider(height: TokenJarak.j4),
+                  Text(
+                    peringatan.isEmpty
+                        ? 'AI Safety Checker: Tidak ditemukan interaksi berbahaya.'
+                        : 'AI Safety Checker: ${peringatan.length} peringatan interaksi telah ditinjau & disetujui apoteker.',
+                    style: TokenTipografi.keterangan.copyWith(
+                      color: TokenStatus.berhasilTeks,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: TokenJarak.j5),
+            TombolPos(
+              label: 'Verifikasi Resep Baru',
+              ikon: LucideIcons.plus,
+              onPressed: _resetResepBaru,
+            ),
+            const SizedBox(height: TokenJarak.j2),
+            TombolPos(
+              label: 'Kembali ke Form Resep',
+              jenis: JenisTombol.sekunder,
+              onPressed: () => setState(() => _terverifikasi = false),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: const AppBarPharma(
@@ -468,7 +612,10 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
                     TombolPos(
                       label: 'Verifikasi Apoteker',
                       ikon: LucideIcons.checkCircle2,
-                      onPressed: () => setState(() => _terverifikasi = true),
+                      onPressed: () => setState(() {
+                        _terverifikasi = true;
+                        _waktuVerifikasi = DateTime.now();
+                      }),
                     ),
                 ],
               ),

@@ -27,6 +27,134 @@ export const skemaSimpanOpname = z
   })
   .strict();
 
+export const skemaTinjauOpname = z
+  .object({
+    baris: z
+      .array(
+        z
+          .object({
+            batch_id: z.number().int().positive(),
+            stok_fisik: z.number().int().min(0).max(1_000_000),
+          })
+          .strict(),
+      )
+      .min(1),
+  })
+  .strict();
+
+export async function tinjauOpnameLayanan(
+  apotekId: number,
+  input: z.infer<typeof skemaTinjauOpname>,
+) {
+  const seen = new Set<number>();
+  for (const b of input.baris) {
+    if (seen.has(b.batch_id)) {
+      throw new GalatAplikasi('VALIDASI_GAGAL', {
+        baris: [`batch_id ${b.batch_id} tidak boleh ganda.`],
+      });
+    }
+    seen.add(b.batch_id);
+  }
+
+  return withApotek(apotekId, async (client) => {
+    const batchAktifRes = await client.query<{ id: string }>(
+      `SELECT id FROM batch_barang WHERE stok > 0 ORDER BY id ASC`,
+    );
+    if (batchAktifRes.rows.length === 0) {
+      throw new GalatAplikasi('TIDAK_ADA_BATCH');
+    }
+
+    const petaInput = new Map(input.baris.map((b) => [b.batch_id, b.stok_fisik]));
+    const belumDihitung: number[] = [];
+    for (const b of batchAktifRes.rows) {
+      const bId = Number(b.id);
+      if (!petaInput.has(bId)) {
+        belumDihitung.push(bId);
+      }
+    }
+    if (belumDihitung.length > 0) {
+      throw new GalatAplikasi('BATCH_BELUM_DIHITUNG', { batch_id: belumDihitung });
+    }
+
+    const semuaInputIds = input.baris.map((b) => b.batch_id);
+    const detailRes = await client.query<{
+      batch_id: string;
+      nomor_batch: string;
+      tanggal_kedaluwarsa: Date | string;
+      stok: number;
+      harga_beli: string;
+      barang_id: string;
+      kode: string;
+      nama: string;
+      satuan: string;
+    }>(
+      `SELECT bb.id AS batch_id, bb.nomor_batch, bb.tanggal_kedaluwarsa,
+              bb.stok, bb.harga_beli,
+              b.id AS barang_id, b.kode, b.nama, b.satuan
+       FROM batch_barang bb
+       JOIN barang b ON b.id = bb.barang_id
+       WHERE bb.id = ANY($1::bigint[])
+       ORDER BY b.nama ASC, bb.tanggal_kedaluwarsa ASC, bb.id ASC`,
+      [semuaInputIds],
+    );
+    if (detailRes.rows.length !== semuaInputIds.length) {
+      throw new GalatAplikasi('TIDAK_DITEMUKAN');
+    }
+
+    let jumlahSama = 0;
+    let jumlahKurang = 0;
+    let jumlahLebih = 0;
+    let nilaiKurang = 0;
+    let nilaiLebih = 0;
+
+    const baris = detailRes.rows.map((r) => {
+      const batchId = Number(r.batch_id);
+      const stokFisik = petaInput.get(batchId)!;
+      const stokSistem = r.stok;
+      const selisih = stokFisik - stokSistem;
+      const hargaBeli = keUangBulat(r.harga_beli);
+      const nilaiSelisih = selisih * hargaBeli;
+
+      if (selisih === 0) jumlahSama++;
+      else if (selisih < 0) {
+        jumlahKurang++;
+        nilaiKurang += Math.abs(nilaiSelisih);
+      } else {
+        jumlahLebih++;
+        nilaiLebih += nilaiSelisih;
+      }
+
+      return {
+        batch_id: batchId,
+        nomor_batch: r.nomor_batch,
+        tanggal_kedaluwarsa: Jam.keTanggalWib(r.tanggal_kedaluwarsa),
+        barang: {
+          id: Number(r.barang_id),
+          kode: r.kode,
+          nama: r.nama,
+          satuan: r.satuan,
+        },
+        stok_sistem: stokSistem,
+        stok_fisik: stokFisik,
+        selisih,
+        nilai_selisih: nilaiSelisih,
+      };
+    });
+
+    return {
+      ringkasan: {
+        jumlah_batch: baris.length,
+        jumlah_sama: jumlahSama,
+        jumlah_selisih_kurang: jumlahKurang,
+        jumlah_selisih_lebih: jumlahLebih,
+        nilai_selisih_kurang: nilaiKurang,
+        nilai_selisih_lebih: nilaiLebih,
+      },
+      baris,
+    };
+  });
+}
+
 export async function daftarBatchOpnameLayanan(apotekId: number) {
   return withApotek(apotekId, async (client) => {
     const res = await client.query<{
