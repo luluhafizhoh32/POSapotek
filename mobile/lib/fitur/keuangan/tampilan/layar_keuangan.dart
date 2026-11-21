@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/komponen.dart';
+import '../../../app/komponen_v2.dart';
 import '../../../app/token.dart';
 import '../../../inti/format.dart';
 import '../../../inti/galat.dart';
@@ -21,6 +23,7 @@ class _LayarKeuanganState extends ConsumerState<LayarKeuangan> {
   );
   Map<String, dynamic>? _data;
   bool _memuat = false;
+  String? _galat;
 
   @override
   void initState() {
@@ -34,8 +37,24 @@ class _LayarKeuanganState extends ConsumerState<LayarKeuangan> {
     super.dispose();
   }
 
+  void _geserBulan(int delta) {
+    final parts = _periodeCtrl.text.trim().split('-');
+    final now = DateTime.now();
+    final tahun =
+        parts.length == 2 ? (int.tryParse(parts[0]) ?? now.year) : now.year;
+    final bulan =
+        parts.length == 2 ? (int.tryParse(parts[1]) ?? now.month) : now.month;
+    final target = DateTime(tahun, bulan + delta, 1);
+    _periodeCtrl.text =
+        '${target.year}-${target.month.toString().padLeft(2, '0')}';
+    _muat();
+  }
+
   Future<void> _muat() async {
-    setState(() => _memuat = true);
+    setState(() {
+      _memuat = true;
+      _galat = null;
+    });
     try {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(
@@ -47,113 +66,449 @@ class _LayarKeuanganState extends ConsumerState<LayarKeuangan> {
       if (mounted) {
         setState(() => _data = res.data['data'] as Map<String, dynamic>);
       }
+    } on GalatApi catch (g) {
+      if (mounted) setState(() => _galat = g.pesan);
     } catch (_) {
+      if (mounted) setState(() => _galat = 'Gagal memuat laporan keuangan.');
     } finally {
       if (mounted) setState(() => _memuat = false);
     }
   }
 
+  Widget _buildSegmentedTabs() {
+    const tabs = [
+      ('neraca-saldo', 'Neraca Saldo', LucideIcons.scale),
+      ('laba-rugi', 'Laba Rugi', LucideIcons.trendingUp),
+    ];
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(TokenRadius.sedang),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: tabs.map((t) {
+          final aktif = _tab == t.$1;
+          return Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(TokenRadius.kecil),
+              onTap: () {
+                if (_tab == t.$1) return;
+                setState(() {
+                  _tab = t.$1;
+                  _data = null;
+                });
+                _muat();
+              },
+              child: AnimatedContainer(
+                duration: AppMotion.fast,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: TokenJarak.j3,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: aktif ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(TokenRadius.kecil),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      t.$3,
+                      size: 16,
+                      color: aktif
+                          ? AppColors.textOnPrimary
+                          : AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      t.$2,
+                      style: TokenTipografi.tabel.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: aktif
+                            ? AppColors.textOnPrimary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildNeracaSaldo(Map<String, dynamic> data) {
+    final baris = (data['baris'] as List? ?? const []);
+    final totalDebit = (data['total_debit'] as num?)?.toInt() ?? 0;
+    final totalKredit = (data['total_kredit'] as num?)?.toInt() ?? 0;
+    final statusPeriode = (data['status_periode'] as String?) ?? 'terbuka';
+    final seimbang = totalDebit == totalKredit;
+
+    if (baris.isEmpty) {
+      return EmptyState(
+        ikon: LucideIcons.scale,
+        judul: 'Belum ada transaksi di periode ini',
+        keterangan:
+            'Neraca saldo akan tampil otomatis setelah ada jurnal transaksi pada periode ${_periodeCtrl.text.trim()}.',
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        TokenJarak.j4,
+        TokenJarak.j2,
+        TokenJarak.j4,
+        TokenJarak.j6,
+      ),
+      children: [
+        Wrap(
+          spacing: TokenJarak.j2,
+          runSpacing: TokenJarak.j2,
+          children: [
+            StatusBadge(
+              label: seimbang ? 'Seimbang' : 'Tidak Seimbang',
+              varian: seimbang ? VarianStatus.success : VarianStatus.danger,
+            ),
+            StatusBadge(
+              label: statusPeriode == 'ditutup'
+                  ? 'Periode Ditutup'
+                  : 'Periode Terbuka',
+              varian: statusPeriode == 'ditutup'
+                  ? VarianStatus.neutral
+                  : VarianStatus.info,
+            ),
+          ],
+        ),
+        const SizedBox(height: TokenJarak.j3),
+        Row(
+          children: [
+            Expanded(
+              child: KpiCard(
+                label: 'Total Debit',
+                nilai: formatRupiah(totalDebit),
+                hero: true,
+              ),
+            ),
+            const SizedBox(width: TokenJarak.j3),
+            Expanded(
+              child: KpiCard(
+                label: 'Total Kredit',
+                nilai: formatRupiah(totalKredit),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: TokenJarak.j4),
+        const SectionHeader(judul: 'Rincian Saldo Akun'),
+        const SizedBox(height: TokenJarak.j2),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(TokenRadius.besar),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppShadows.card,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: TabelBarisPos(
+            kepala: const ['Akun', 'Debit', 'Kredit'],
+            rataKanan: const [false, true, true],
+            baris: [
+              ...baris.map((raw) {
+                final b = raw as Map<String, dynamic>;
+                return [
+                  '${b['akun_kode']} · ${b['akun_nama']}',
+                  formatRupiah((b['debit'] as num).toInt()),
+                  formatRupiah((b['kredit'] as num).toInt()),
+                ];
+              }),
+              [
+                'TOTAL',
+                formatRupiah(totalDebit),
+                formatRupiah(totalKredit),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLabaRugi(Map<String, dynamic> data) {
+    final pendapatan = (data['pendapatan'] as List? ?? const []);
+    final beban = (data['beban'] as List? ?? const []);
+    final totalPendapatan = (data['total_pendapatan'] as num?)?.toInt() ?? 0;
+    final totalBeban = (data['total_beban'] as num?)?.toInt() ?? 0;
+    final labaKotor = (data['laba_kotor'] as num?)?.toInt() ?? 0;
+    final labaBersih = (data['laba_bersih'] as num?)?.toInt() ?? 0;
+    final marginPersen = totalPendapatan > 0
+        ? (labaBersih * 100 / totalPendapatan).toStringAsFixed(1)
+        : null;
+
+    if (pendapatan.isEmpty && beban.isEmpty) {
+      return EmptyState(
+        ikon: LucideIcons.trendingUp,
+        judul: 'Belum ada pendapatan atau beban',
+        keterangan:
+            'Laporan laba rugi akan terisi otomatis dari transaksi penjualan dan beban pada periode ${_periodeCtrl.text.trim()}.',
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        TokenJarak.j4,
+        TokenJarak.j2,
+        TokenJarak.j4,
+        TokenJarak.j6,
+      ),
+      children: [
+        KpiCard(
+          label: 'Laba Bersih (${_periodeCtrl.text.trim()})',
+          nilai: formatRupiah(labaBersih),
+          hero: true,
+          delta: marginPersen != null ? 'Margin $marginPersen%' : null,
+          deltaPositif: labaBersih >= 0,
+          catatan: 'Laba kotor: ${formatRupiah(labaKotor)}',
+        ),
+        const SizedBox(height: TokenJarak.j3),
+        Row(
+          children: [
+            Expanded(
+              child: KpiCard(
+                label: 'Total Pendapatan',
+                nilai: formatRupiah(totalPendapatan),
+              ),
+            ),
+            const SizedBox(width: TokenJarak.j3),
+            Expanded(
+              child: KpiCard(
+                label: 'Total Beban & HPP',
+                nilai: formatRupiah(totalBeban),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: TokenJarak.j4),
+        const SectionHeader(judul: 'Pendapatan'),
+        const SizedBox(height: TokenJarak.j2),
+        _KartuRincianAkun(
+          item: pendapatan,
+          labelTotal: 'Subtotal Pendapatan',
+          total: totalPendapatan,
+          warnaNilai: AppColors.success,
+        ),
+        const SizedBox(height: TokenJarak.j4),
+        const SectionHeader(judul: 'Beban & HPP'),
+        const SizedBox(height: TokenJarak.j2),
+        _KartuRincianAkun(
+          item: beban,
+          labelTotal: 'Subtotal Beban & HPP',
+          total: totalBeban,
+          warnaNilai: AppColors.textPrimary,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Keuangan')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Keuangan'),
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, color: AppColors.border),
+        ),
+      ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(TokenJarak.j3),
-            child: Row(
+          Container(
+            color: AppColors.surface,
+            padding: const EdgeInsets.fromLTRB(
+              TokenJarak.j4,
+              TokenJarak.j3,
+              TokenJarak.j4,
+              TokenJarak.j3,
+            ),
+            child: Column(
               children: [
-                Expanded(
-                    child: IsianTeksPos(
-                        controller: _periodeCtrl, label: 'Periode (YYYY-MM)')),
-                const SizedBox(width: TokenJarak.j2),
-                TombolPos(label: 'Muat', penuh: false, onPressed: _muat),
+                Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Bulan sebelumnya',
+                      onPressed: () => _geserBulan(-1),
+                      icon: const Icon(LucideIcons.chevronLeft, size: 18),
+                    ),
+                    Expanded(
+                      child: IsianTeksPos(
+                        controller: _periodeCtrl,
+                        label: 'Periode (YYYY-MM)',
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Bulan berikutnya',
+                      onPressed: () => _geserBulan(1),
+                      icon: const Icon(LucideIcons.chevronRight, size: 18),
+                    ),
+                    const SizedBox(width: TokenJarak.j1),
+                    TombolPos(label: 'Muat', penuh: false, onPressed: _muat),
+                  ],
+                ),
+                const SizedBox(height: TokenJarak.j3),
+                _buildSegmentedTabs(),
               ],
             ),
           ),
-          Row(
-            children: [
-              ('neraca-saldo', 'Neraca Saldo'),
-              ('laba-rugi', 'Laba Rugi'),
-              ('neraca', 'Neraca'),
-            ].map((e) {
-              return Expanded(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: TokenJarak.j1),
-                  child: TombolPos(
-                    label: e.$2,
-                    jenis:
-                        _tab == e.$1 ? JenisTombol.utama : JenisTombol.sekunder,
-                    onPressed: () {
-                      setState(() => _tab = e.$1);
-                      _muat();
-                    },
-                  ),
+          const Divider(height: 1, color: AppColors.border),
+          Expanded(
+            child: _memuat
+                ? const SkeletonLoader(jumlahBaris: 5, tinggiKartu: 72)
+                : _galat != null
+                    ? ErrorState(pesan: _galat!, onCobaLagi: _muat)
+                    : _data == null
+                        ? const SkeletonLoader(jumlahBaris: 4, tinggiKartu: 72)
+                        : _tab == 'neraca-saldo'
+                            ? _buildNeracaSaldo(_data!)
+                            : _buildLabaRugi(_data!),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KartuRincianAkun extends StatelessWidget {
+  final List item;
+  final String labelTotal;
+  final int total;
+  final Color warnaNilai;
+
+  const _KartuRincianAkun({
+    required this.item,
+    required this.labelTotal,
+    required this.total,
+    required this.warnaNilai,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(TokenRadius.besar),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        children: [
+          if (item.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(TokenJarak.j4),
+              child: Text(
+                'Tidak ada catatan pada bagian ini.',
+                style: TokenTipografi.tabel
+                    .copyWith(color: AppColors.textSecondary),
+              ),
+            )
+          else
+            ...item.asMap().entries.map((entry) {
+              final r = entry.value as Map<String, dynamic>;
+              final kode = r['akun_kode'] as String?;
+              final nama = (r['akun_nama'] as String?) ?? '-';
+              final jumlah = (r['jumlah'] as num?)?.toInt() ?? 0;
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: TokenJarak.j4,
+                  vertical: TokenJarak.j3,
+                ),
+                decoration: BoxDecoration(
+                  border: entry.key == 0
+                      ? null
+                      : const Border(
+                          top: BorderSide(color: AppColors.border),
+                        ),
+                ),
+                child: Row(
+                  children: [
+                    if (kode != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceAlt,
+                          borderRadius:
+                              BorderRadius.circular(TokenRadius.kecil),
+                        ),
+                        child: Text(
+                          kode,
+                          style: TokenTipografi.angkaTabular(
+                            TokenTipografi.keterangan,
+                          ).copyWith(color: AppColors.textSecondary),
+                        ),
+                      ),
+                      const SizedBox(width: TokenJarak.j2),
+                    ],
+                    Expanded(
+                      child: Text(
+                        nama,
+                        style: TokenTipografi.tabel.copyWith(
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: TokenJarak.j2),
+                    Text(
+                      formatRupiah(jumlah),
+                      style: TokenTipografi.angkaTabular(TokenTipografi.tabel)
+                          .copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: warnaNilai,
+                      ),
+                    ),
+                  ],
                 ),
               );
-            }).toList(),
-          ),
-          Expanded(
-            child: _memuat || _data == null
-                ? const Center(child: CircularProgressIndicator())
-                : ListView(
-                    padding: const EdgeInsets.all(TokenJarak.j4),
-                    children: [
-                      if (_tab == 'neraca-saldo') ...[
-                        TabelBarisPos(
-                          kepala: const ['Akun', 'Debit', 'Kredit'],
-                          rataKanan: const [false, true, true],
-                          baris: (_data!['baris'] as List).map((raw) {
-                            final b = raw as Map<String, dynamic>;
-                            return [
-                              '${b['akun_kode']} ${b['akun_nama']}',
-                              formatRupiah((b['debit'] as num).toInt()),
-                              formatRupiah((b['kredit'] as num).toInt()),
-                            ];
-                          }).toList(),
-                        ),
-                      ] else if (_tab == 'laba-rugi') ...[
-                        Text(
-                          'Laba Bersih: ${formatRupiah((_data!['laba_bersih'] as num).toInt())}',
-                          style:
-                              TokenTipografi.angkaTabular(TokenTipografi.judul),
-                        ),
-                        const SizedBox(height: TokenJarak.j3),
-                        TabelBarisPos(
-                          kepala: const ['Akun', 'Jumlah'],
-                          rataKanan: const [false, true],
-                          baris: [
-                            ...(_data!['pendapatan'] as List).map((raw) {
-                              final r = raw as Map<String, dynamic>;
-                              return [
-                                r['akun_nama'] as String,
-                                formatRupiah((r['jumlah'] as num).toInt())
-                              ];
-                            }),
-                            ...(_data!['beban'] as List).map((raw) {
-                              final r = raw as Map<String, dynamic>;
-                              return [
-                                r['akun_nama'] as String,
-                                formatRupiah((r['jumlah'] as num).toInt())
-                              ];
-                            }),
-                          ],
-                        ),
-                      ] else ...[
-                        Text(
-                          'Total Aset: ${formatRupiah((_data!['total_aset'] as num).toInt())}',
-                          style:
-                              TokenTipografi.angkaTabular(TokenTipografi.seksi),
-                        ),
-                        Text(
-                          'Kewajiban + Ekuitas: ${formatRupiah((_data!['total_kewajiban'] as num).toInt() + (_data!['total_ekuitas'] as num).toInt())}',
-                          style:
-                              TokenTipografi.angkaTabular(TokenTipografi.seksi),
-                        ),
-                      ],
-                    ],
+            }),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: TokenJarak.j4,
+              vertical: TokenJarak.j3,
+            ),
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceAlt,
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(TokenRadius.besar),
+              ),
+              border: Border(top: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  labelTotal,
+                  style: TokenTipografi.tabel.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
+                ),
+                Text(
+                  formatRupiah(total),
+                  style: TokenTipografi.angkaTabular(TokenTipografi.tabel)
+                      .copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
