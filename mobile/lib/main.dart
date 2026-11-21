@@ -35,7 +35,7 @@ class _PosApotekAppState extends ConsumerState<PosApotekApp> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'POS Apotek KADIN',
+      title: 'PharmaPOS — KADIN Bengkalis',
       debugShowCheckedModeBanner: false,
       theme: bangunTemaPos(),
       locale: const Locale('id', 'ID'),

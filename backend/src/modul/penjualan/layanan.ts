@@ -43,7 +43,7 @@ export const skemaSimpanPenjualan = z
       )
       .min(1)
       .max(100),
-    cara_bayar: z.enum(['tunai', 'qris', 'transfer']),
+    cara_bayar: z.enum(['tunai', 'qris', 'debit', 'transfer', 'ewallet']),
     uang_diterima: skemaUang.nullable().optional(),
     pembayaran_nontunai_id: z.string().uuid().nullable().optional(),
     waktu_perangkat: z.string().trim().optional().nullable(),
@@ -54,7 +54,7 @@ export const skemaDaftarPenjualan = skemaPaginasi.extend({
   tanggal_dari: skemaTanggal.optional(),
   tanggal_sampai: skemaTanggal.optional(),
   kasir_id: z.coerce.number().int().positive().optional(),
-  cara_bayar: z.enum(['tunai', 'qris', 'transfer']).optional(),
+  cara_bayar: z.enum(['tunai', 'qris', 'debit', 'transfer', 'ewallet']).optional(),
 });
 
 function pastikanBarangTidakGanda(baris: Array<{ barang_id: number }>) {

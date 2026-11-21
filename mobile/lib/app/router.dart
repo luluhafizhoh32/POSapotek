@@ -4,6 +4,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../fitur/ai/tampilan/layar_ai_insight.dart';
+import '../fitur/ai/tampilan/layar_cek_interaksi_ai.dart';
 import '../fitur/antrean/tampilan/layar_antrean.dart';
 import '../fitur/auth/tampilan/layar_auth.dart';
 import '../fitur/keuangan/tampilan/layar_keuangan.dart';
@@ -275,6 +277,12 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama>
             badge: 0,
           ),
           (
+            label: 'Cek AI',
+            ikon: LucideIcons.sparkles,
+            layar: const LayarCekInteraksiAi(),
+            badge: 0,
+          ),
+          (
             label: 'Near-expired',
             ikon: LucideIcons.alertTriangle,
             layar: const LayarNearExpired(),
@@ -327,10 +335,21 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama>
             badge: 0,
           ),
           (
+            label: 'AI Insight',
+            ikon: LucideIcons.sparkles,
+            layar: const LayarAiInsight(),
+            badge: 0,
+          ),
+          (
             label: 'Lainnya',
             ikon: LucideIcons.menu,
             layar: _LayarLainnya(
               item: [
+                (
+                  'Cek Interaksi AI',
+                  LucideIcons.sparkles,
+                  () => const LayarCekInteraksiAi()
+                ),
                 ('Pengguna', LucideIcons.users, () => const LayarPengguna()),
                 (
                   'Pengaturan',

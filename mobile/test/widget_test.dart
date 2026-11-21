@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_localizations/flutter_localizations.dart' as fl;
 import 'package:material_ui/material_ui.dart' as mui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -158,9 +159,9 @@ void main() {
         child: MaterialApp(
           theme: bangunTemaPos(),
           localizationsDelegates: const [
-            fl.GlobalMaterialLocalizations.delegate,
+            mui.GlobalMaterialLocalizations.delegate,
             fl.GlobalWidgetsLocalizations.delegate,
-            fl.GlobalCupertinoLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
             mui.DefaultMaterialLocalizations.delegate,
           ],
           home: const LayarPenjualan(),
@@ -224,9 +225,9 @@ void main() {
         child: MaterialApp(
           theme: bangunTemaPos(),
           localizationsDelegates: const [
-            fl.GlobalMaterialLocalizations.delegate,
+            mui.GlobalMaterialLocalizations.delegate,
             fl.GlobalWidgetsLocalizations.delegate,
-            fl.GlobalCupertinoLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
             mui.DefaultMaterialLocalizations.delegate,
           ],
           home: const LayarPenjualan(),
@@ -284,16 +285,17 @@ void main() {
           overrides: [
             basisDataLokalProvider.overrideWithValue(db),
             sesiProvider.overrideWith((_) => sesi),
-            klienApiProvider.overrideWithValue(KlienApi(sesi: sesi, dioOverride: dio)),
+            klienApiProvider
+                .overrideWithValue(KlienApi(sesi: sesi, dioOverride: dio)),
             penjualanRepositoriProvider
                 .overrideWithValue(_RepoPenjualanPalsu()),
           ],
           child: MaterialApp(
             theme: bangunTemaPos(),
             localizationsDelegates: const [
-              fl.GlobalMaterialLocalizations.delegate,
+              mui.GlobalMaterialLocalizations.delegate,
               fl.GlobalWidgetsLocalizations.delegate,
-              fl.GlobalCupertinoLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
               mui.DefaultMaterialLocalizations.delegate,
             ],
             home: const CangkangUtama(),

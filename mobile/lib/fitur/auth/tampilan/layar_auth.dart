@@ -67,14 +67,71 @@ class _LayarMasukState extends ConsumerState<LayarMasuk> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('POS Apotek KADIN', style: TokenTipografi.judul),
-                  const SizedBox(height: TokenJarak.j1),
+                  Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: TokenAksi.utama,
+                          borderRadius:
+                              BorderRadius.circular(TokenRadius.sedang),
+                        ),
+                        child: const Icon(
+                          LucideIcons.plus,
+                          color: TokenTeks.diUtama,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: TokenJarak.j3),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('PharmaPOS', style: TokenTipografi.judul),
+                            Text(
+                              'Apotek Binaan KADIN Bengkalis',
+                              style: TokenTipografi.keterangan
+                                  .copyWith(color: TokenAksi.utama, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: TokenJarak.j3),
                   Text(
-                    'Silakan masuk dengan akun apotek Anda',
-                    style: TokenTipografi.dasar
+                    'POS & Manajemen Apotek dalam Genggaman. Silakan masuk dengan akun Anda.',
+                    style: TokenTipografi.tabel
                         .copyWith(color: TokenTeks.sekunder),
                   ),
-                  const SizedBox(height: TokenJarak.j6),
+                  const SizedBox(height: TokenJarak.j4),
+                  Wrap(
+                    spacing: TokenJarak.j2,
+                    runSpacing: TokenJarak.j2,
+                    children: [
+                      ('Kasir', 'kasir1'),
+                      ('Apoteker', 'apoteker1'),
+                      ('Gudang', 'gudang1'),
+                      ('Owner', 'pemilik1'),
+                    ].map((r) {
+                      final dipilih = _usernameCtrl.text.trim() == r.$2;
+                      return ChoiceChip(
+                        label: Text(r.$1),
+                        selected: dipilih,
+                        selectedColor: TokenLatar.terpilih,
+                        onSelected: (_) {
+                          setState(() {
+                            _usernameCtrl.text = r.$2;
+                            if (_sandiCtrl.text.isEmpty) {
+                              _sandiCtrl.text = 'Demo12345';
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: TokenJarak.j4),
                   if (_pesanGalat != null) ...[
                     PesanPos(jenis: JenisPesan.bahaya, teks: _pesanGalat!),
                     const SizedBox(height: TokenJarak.j4),

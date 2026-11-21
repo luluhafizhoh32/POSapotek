@@ -9,12 +9,14 @@ import { Jam } from '../../lib/jam.js';
 import { keUangBulat } from '../../lib/uang.js';
 import { skemaUangPositif } from '../../lib/validasi.js';
 
+export type CaraNontunai = 'qris' | 'debit' | 'transfer' | 'ewallet';
+
 export interface GerbangPembayaran {
-  buat(cara: 'qris' | 'transfer', jumlah: number): Promise<{ referensi: string; kode_bayar: string }>;
+  buat(cara: CaraNontunai, jumlah: number): Promise<{ referensi: string; kode_bayar: string }>;
 }
 
 class GerbangMock implements GerbangPembayaran {
-  async buat(_cara: 'qris' | 'transfer', _jumlah: number) {
+  async buat(_cara: CaraNontunai, _jumlah: number) {
     const referensi = `PAY-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
     return {
       referensi,
@@ -33,7 +35,7 @@ function dapatkanGerbang(): GerbangPembayaran {
 
 export const skemaBuatPembayaran = z
   .object({
-    cara: z.enum(['qris', 'transfer']),
+    cara: z.enum(['qris', 'debit', 'transfer', 'ewallet']),
     jumlah: skemaUangPositif,
   })
   .strict();
@@ -59,7 +61,7 @@ export async function buatPembayaranNontunaiLayanan(
   return withApotek(pengguna.apotekId, async (client) => {
     const res = await client.query<{
       id: string;
-      cara: 'qris' | 'transfer';
+      cara: CaraNontunai;
       jumlah: string;
       referensi: string;
       kode_bayar: string;
@@ -100,7 +102,7 @@ export async function ambilPembayaranNontunaiLayanan(apotekId: number, id: strin
   return withApotek(apotekId, async (client) => {
     const res = await client.query<{
       id: string;
-      cara: 'qris' | 'transfer';
+      cara: CaraNontunai;
       jumlah: string;
       referensi: string;
       kode_bayar: string;
@@ -145,7 +147,7 @@ export async function simulasiBayarLayanan(apotekId: number, id: string) {
   return withApotek(apotekId, async (client) => {
     const res = await client.query<{
       id: string;
-      cara: 'qris' | 'transfer';
+      cara: CaraNontunai;
       jumlah: string;
       referensi: string;
       kode_bayar: string;

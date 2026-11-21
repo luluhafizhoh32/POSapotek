@@ -1,18 +1,24 @@
 import 'package:material_ui/material_ui.dart';
 
-/// Token desain resmi POS Apotek KADIN Bengkalis (Bagian 10.8).
+/// Token desain resmi PharmaPOS — Apotek Binaan KADIN Bengkalis.
 abstract final class WarnaMentah {
-  // Utama
-  static const utama50 = Color(0xFFEAF0FA);
-  static const utama100 = Color(0xFFD6E0F5);
-  static const utama200 = Color(0xFFB0C3E8);
-  static const utama300 = Color(0xFF85A0D6);
-  static const utama400 = Color(0xFF557AC3);
-  static const utama500 = Color(0xFF3359A3);
-  static const utama600 = Color(0xFF1F3B73);
-  static const utama700 = Color(0xFF1A3161);
-  static const utama800 = Color(0xFF122549);
-  static const utama900 = Color(0xFF0C1832);
+  // Utama (Emerald PharmaPOS)
+  static const utama50 = Color(0xFFECFDF5);
+  static const utama100 = Color(0xFFD1FAE5);
+  static const utama200 = Color(0xFFA7F3D0);
+  static const utama300 = Color(0xFF6EE7B7);
+  static const utama400 = Color(0xFF34D399);
+  static const utama500 = Color(0xFF10B981);
+  static const utama600 = Color(0xFF059669);
+  static const utama700 = Color(0xFF047857);
+  static const utama800 = Color(0xFF065F46);
+  static const utama900 = Color(0xFF064E3B);
+
+  // Aksen AI (Violet PharmaPOS)
+  static const ai50 = Color(0xFFF5F3FF);
+  static const ai100 = Color(0xFFEDE9FE);
+  static const ai600 = Color(0xFF7C3AED);
+  static const ai700 = Color(0xFF6D28D9);
 
   // Netral
   static const netral50 = Color(0xFFF9F9FB);
@@ -111,8 +117,8 @@ abstract final class TokenUkuran {
 }
 
 abstract final class TokenRadius {
-  static const double kecil = 4;
-  static const double sedang = 8;
+  static const double kecil = 8;
+  static const double sedang = 12;
 }
 
 abstract final class TokenGarisTebal {

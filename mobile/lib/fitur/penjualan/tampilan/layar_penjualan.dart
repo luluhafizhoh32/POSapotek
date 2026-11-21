@@ -60,6 +60,7 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
   final _cariCtrl = TextEditingController();
   final List<ItemKeranjang> _keranjang = [];
   List<ItemBarangPos> _hasilCari = [];
+  String _filterGolongan = 'semua';
   String _kunciIdempoten = const Uuid().v4();
   Timer? _debouncePratinjau;
   bool _sedangOfflineEstimasi = false;
@@ -514,7 +515,43 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                 ],
                 Text('Daftar Barang', style: TokenTipografi.seksi),
                 const SizedBox(height: TokenJarak.j2),
-                ..._hasilCari.map(
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      ('semua', 'Semua'),
+                      ('bebas', 'Obat Bebas'),
+                      ('keras', 'Obat Keras'),
+                      ('lainnya', 'Lainnya'),
+                    ].map((f) {
+                      final dipilih = _filterGolongan == f.$1;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: TokenJarak.j2),
+                        child: ChoiceChip(
+                          label: Text(f.$2),
+                          selected: dipilih,
+                          selectedColor: TokenLatar.terpilih,
+                          onSelected: (_) =>
+                              setState(() => _filterGolongan = f.$1),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: TokenJarak.j2),
+                ..._hasilCari.where((b) {
+                  if (_filterGolongan == 'semua') return true;
+                  if (_filterGolongan == 'bebas') {
+                    return b.golongan == 'bebas' ||
+                        b.golongan == 'bebas_terbatas';
+                  }
+                  if (_filterGolongan == 'keras') {
+                    return b.golongan == 'keras';
+                  }
+                  return b.golongan != 'bebas' &&
+                      b.golongan != 'bebas_terbatas' &&
+                      b.golongan != 'keras';
+                }).map(
                   (b) => InkWell(
                     onTap: () => _tambahKeKeranjang(b),
                     child: Container(
@@ -533,9 +570,37 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(b.nama, style: TokenTipografi.dasar),
-                                Text(
-                                  '${b.satuan} · Stok ${b.stokTotal}',
-                                  style: TokenTipografi.keterangan,
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${b.satuan} · Stok ${b.stokTotal}',
+                                      style: TokenTipografi.keterangan,
+                                    ),
+                                    const SizedBox(width: TokenJarak.j2),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: b.golongan == 'keras'
+                                            ? TokenStatus.bahayaLatar
+                                            : TokenStatus.berhasilLatar,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        b.golongan == 'keras'
+                                            ? 'Obat Keras (K)'
+                                            : b.golongan.replaceAll('_', ' '),
+                                        style:
+                                            TokenTipografi.keterangan.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: b.golongan == 'keras'
+                                              ? TokenStatus.bahayaTeks
+                                              : TokenStatus.berhasilTeks,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -783,37 +848,35 @@ class _PanelPembayaranState extends ConsumerState<_PanelPembayaran> {
               PesanPos(jenis: JenisPesan.bahaya, teks: _pesanGalat!),
               const SizedBox(height: TokenJarak.j3),
             ],
-            Row(
-              children: ['tunai', 'qris', 'transfer'].map((c) {
+            Wrap(
+              spacing: TokenJarak.j2,
+              runSpacing: TokenJarak.j2,
+              children: ['tunai', 'qris', 'debit', 'transfer', 'ewallet'].map((c) {
                 final terpilih = _cara == c;
                 final label = switch (c) {
                   'tunai' => 'Tunai',
                   'qris' => 'QRIS',
+                  'debit' => 'Debit',
                   'transfer' => 'Transfer',
+                  'ewallet' => 'E-Wallet',
                   _ => c,
                 };
-                return Expanded(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: TokenJarak.j1),
-                    child: TombolPos(
-                      label: label,
-                      jenis:
-                          terpilih ? JenisTombol.utama : JenisTombol.sekunder,
-                      onPressed: () {
-                        _pollingTimer?.cancel();
-                        _countdownTimer?.cancel();
-                        setState(() {
-                          _cara = c;
-                          _nontunai = null;
-                          _pesanGalat = null;
-                        });
-                        if (c != 'tunai') {
-                          _mulaiNontunai(c);
-                        }
-                      },
-                    ),
-                  ),
+                return TombolPos(
+                  label: label,
+                  penuh: false,
+                  jenis: terpilih ? JenisTombol.utama : JenisTombol.sekunder,
+                  onPressed: () {
+                    _pollingTimer?.cancel();
+                    _countdownTimer?.cancel();
+                    setState(() {
+                      _cara = c;
+                      _nontunai = null;
+                      _pesanGalat = null;
+                    });
+                    if (c != 'tunai') {
+                      _mulaiNontunai(c);
+                    }
+                  },
                 );
               }).toList(),
             ),
