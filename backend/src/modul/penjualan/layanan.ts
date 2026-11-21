@@ -47,6 +47,16 @@ export const skemaSimpanPenjualan = z
     uang_diterima: skemaUang.nullable().optional(),
     pembayaran_nontunai_id: z.string().uuid().nullable().optional(),
     waktu_perangkat: z.string().trim().optional().nullable(),
+    resep: z
+      .object({
+        nomor_resep: z.string().trim().min(1).max(80),
+        tanggal_resep: skemaTanggal,
+        nama_dokter: z.string().trim().min(2).max(120),
+        nama_pasien: z.string().trim().min(2).max(120),
+        catatan: z.string().trim().max(300).optional(),
+      })
+      .nullable()
+      .optional(),
   })
   .strict();
 
@@ -308,15 +318,24 @@ export async function simpanPenjualanLayanan(
       }
       const rencana: RencanaBaris[] = [];
 
+      let butuhResep = false;
       for (const item of barisTerurut) {
         const brgRes = await client.query<{
           id: string;
           harga_jual: string;
           aktif: boolean;
-        }>(`SELECT id, harga_jual, aktif FROM barang WHERE id = $1`, [item.barang_id]);
+          golongan: string;
+        }>(`SELECT id, harga_jual, aktif, golongan FROM barang WHERE id = $1`, [item.barang_id]);
         const brg = brgRes.rows[0];
         if (!brg) {
           throw new GalatAplikasi('TIDAK_DITEMUKAN', { barang_id: item.barang_id });
+        }
+        if (
+          brg.golongan === 'narkotika' ||
+          brg.golongan === 'psikotropika' ||
+          brg.golongan === 'prekursor'
+        ) {
+          butuhResep = true;
         }
 
         if (!brg.aktif) {
@@ -390,6 +409,13 @@ export async function simpanPenjualanLayanan(
 
       if (barisDitolak.length > 0) {
         throw new GalatAplikasi('BARIS_DITOLAK', { baris: barisDitolak });
+      }
+      if (butuhResep && !input.resep) {
+        throw new GalatAplikasi('VALIDASI_GAGAL', {
+          resep: [
+            'Penjualan obat golongan khusus (narkotika/psikotropika/prekursor) wajib menyertakan data resep dokter.',
+          ],
+        });
       }
 
       // Kembalikan urutan asli sesuai input
@@ -475,6 +501,23 @@ export async function simpanPenjualanLayanan(
         ],
       );
       const penjualanId = Number(penRes.rows[0]!.id);
+
+      if (input.resep) {
+        await client.query(
+          `INSERT INTO resep_penjualan
+             (apotek_id, penjualan_id, nomor_resep, tanggal_resep, nama_dokter, nama_pasien, catatan)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            pengguna.apotekId,
+            penjualanId,
+            input.resep.nomor_resep,
+            input.resep.tanggal_resep,
+            input.resep.nama_dokter,
+            input.resep.nama_pasien,
+            input.resep.catatan ?? null,
+          ],
+        );
+      }
 
       for (const r of rencanaSesuaiInput) {
         const bpRes = await client.query<{ id: string }>(

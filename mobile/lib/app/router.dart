@@ -1,20 +1,25 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../fitur/ai/tampilan/layar_ai_insight.dart';
+import '../fitur/ai/tampilan/layar_asisten_ai.dart';
 import '../fitur/ai/tampilan/layar_cek_interaksi_ai.dart';
 import '../fitur/antrean/tampilan/layar_antrean.dart';
 import '../fitur/auth/tampilan/layar_auth.dart';
+import '../fitur/dev/layar_katalog_komponen.dart';
 import '../fitur/keuangan/tampilan/layar_keuangan.dart';
+import '../fitur/keuangan/tampilan/layar_utang_buku_besar.dart';
 import '../fitur/laporan/tampilan/layar_laporan.dart';
 import '../fitur/master/tampilan/layar_master.dart';
 import '../fitur/near_expired/tampilan/layar_near_expired.dart';
 import '../fitur/notifikasi/tampilan/layar_notifikasi.dart';
 import '../fitur/opname/tampilan/layar_opname.dart';
 import '../fitur/penerimaan/tampilan/layar_penerimaan.dart';
+import '../fitur/penerimaan/tampilan/layar_surat_pesanan.dart';
 import '../fitur/pengajuan/tampilan/layar_pengajuan.dart';
 import '../fitur/pengaturan/tampilan/layar_pengaturan.dart';
 import '../fitur/pengguna/tampilan/layar_pengguna.dart';
@@ -22,6 +27,7 @@ import '../fitur/penjualan/tampilan/layar_penjualan.dart';
 import '../inti/antrean.dart';
 import '../inti/klien_api.dart';
 import '../inti/sesi.dart';
+import 'komponen_v2.dart';
 import 'token.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -52,6 +58,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const LayarGantiSandi(wajib: true),
       ),
       GoRoute(path: '/beranda', builder: (_, __) => const CangkangUtama()),
+      if (kDebugMode)
+        GoRoute(
+          path: '/dev/components',
+          builder: (_, __) => const LayarKatalogKomponen(),
+        ),
     ],
   );
 });
@@ -146,32 +157,21 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama>
     final tabs = _bangunTabUntukPeran(pengguna.peran, antreanCount);
     final idxAman = _indeks.clamp(0, tabs.length - 1);
 
-    return Scaffold(
-      body: tabs[idxAman].layar,
-      bottomNavigationBar: Container(
-        height: TokenUkuran.tinggiBilahBawah,
-        decoration: const BoxDecoration(
-          color: TokenLatar.latar,
-          border: Border(top: BorderSide(color: TokenGaris.pemisah)),
-        ),
-        child: NavigationBar(
-          height: TokenUkuran.tinggiBilahBawah,
-          backgroundColor: TokenLatar.latar,
-          indicatorColor: TokenLatar.terpilih,
-          selectedIndex: idxAman,
-          onDestinationSelected: (i) => setState(() => _indeks = i),
-          destinations: tabs
-              .map(
-                (t) => NavigationDestination(
-                  icon: t.badge > 0
-                      ? Badge(label: Text('${t.badge}'), child: Icon(t.ikon))
-                      : Icon(t.ikon),
-                  label: t.label,
-                ),
-              )
-              .toList(),
-        ),
-      ),
+    return ResponsiveScaffold(
+      indeksAktif: idxAman,
+      onPilihTab: (i) => setState(() => _indeks = i),
+      namaApotek: pengguna.apotekNama,
+      labelPeran: pengguna.labelPeran,
+      tabs: tabs
+          .map(
+            (t) => ItemNavigasiPos(
+              label: t.label,
+              ikon: t.ikon,
+              layar: t.layar,
+              badge: t.badge,
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -250,6 +250,11 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama>
                   'Near-expired',
                   LucideIcons.alertTriangle,
                   () => const LayarNearExpired()
+                ),
+                (
+                  'Surat Pesanan (SP)',
+                  LucideIcons.fileSignature,
+                  () => const LayarSuratPesanan()
                 ),
                 (
                   'Defekta',
@@ -346,9 +351,29 @@ class _CangkangUtamaState extends ConsumerState<CangkangUtama>
             layar: _LayarLainnya(
               item: [
                 (
+                  'Asisten AI PharmaPOS',
+                  LucideIcons.messageSquare,
+                  () => const LayarAsistenAi()
+                ),
+                (
                   'Cek Interaksi AI',
                   LucideIcons.sparkles,
                   () => const LayarCekInteraksiAi()
+                ),
+                (
+                  'Surat Pesanan (SP)',
+                  LucideIcons.fileSignature,
+                  () => const LayarSuratPesanan()
+                ),
+                (
+                  'Utang Usaha (PBF)',
+                  LucideIcons.receipt,
+                  () => const LayarUtangPemasok()
+                ),
+                (
+                  'Buku Besar',
+                  LucideIcons.bookMarked,
+                  () => const LayarBukuBesar()
                 ),
                 ('Pengguna', LucideIcons.users, () => const LayarPengguna()),
                 (

@@ -337,4 +337,118 @@ export async function ruteAi(app: FastifyInstance): Promise<void> {
       return reply.status(200).send({ data });
     },
   );
+
+  // 3. Asisten AI Obrolan Berbasis Data Nyata (Gemini Adapter + Fallback Tanpa Mengarang)
+  const skemaTanyaAi = z.object({
+    pertanyaan: z.string().trim().min(2).max(500),
+  });
+
+  app.post(
+    '/ai/tanya',
+    { preHandler: [autentikasi, izinkanPeran(['pemilik', 'apa', 'staf_gudang'])] },
+    async (request, reply) => {
+      const { pertanyaan } = validasiZod(skemaTanyaAi, request.body);
+      const u = request.pengguna!;
+      const periode = Jam.hariIniWib().slice(0, 7);
+      const awalBulan = `${periode}-01`;
+
+      // Baca-saja data nyata sesuai peran & apotek_id
+      const fakta = await withApotek(u.apotekId, async (client) => {
+        const penjRes = await client.query<{ omzet: string; hpp: string; trx: string }>(
+          `SELECT COALESCE(SUM(total), 0)::text AS omzet,
+                  COALESCE(SUM(total_hpp), 0)::text AS hpp,
+                  COUNT(*)::text AS trx
+           FROM penjualan
+           WHERE (waktu AT TIME ZONE 'Asia/Jakarta')::date >= $1::date`,
+          [awalBulan],
+        );
+        const defektaRes = await client.query<{ jumlah: string }>(
+          `SELECT COUNT(*)::text AS jumlah FROM barang b
+           WHERE b.aktif = true AND b.stok_minimum > 0
+             AND COALESCE((SELECT SUM(bb.stok) FROM batch_barang bb WHERE bb.barang_id = b.id), 0) < b.stok_minimum`,
+        );
+        const neRes = await client.query<{ jumlah: string }>(
+          `SELECT COUNT(*)::text AS jumlah FROM batch_barang
+           WHERE stok > 0 AND tanggal_kedaluwarsa <= ($1::date + INTERVAL '90 days')`,
+          [Jam.hariIniWib()],
+        );
+        const omzet = Number(penjRes.rows[0]!.omzet);
+        const hpp = Number(penjRes.rows[0]!.hpp);
+        return {
+          periode,
+          omzet_bulan_ini: u.peran === 'staf_gudang' ? null : omzet,
+          laba_kotor_bulan_ini: u.peran === 'staf_gudang' ? null : omzet - hpp,
+          transaksi_bulan_ini: Number(penjRes.rows[0]!.trx),
+          barang_defekta: Number(defektaRes.rows[0]!.jumlah),
+          batch_near_expired_90h: Number(neRes.rows[0]!.jumlah),
+        };
+      });
+
+      const apiKey = process.env.GEMINI_API_KEY?.trim();
+      const model = process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash';
+      let jawaban = '';
+      let sumberModel = 'analitik-lokal-postgresql';
+
+      if (apiKey) {
+        try {
+          const prompt = `Anda adalah Asisten AI PharmaPOS untuk apotek binaan KADIN Bengkalis.
+Jawab singkat dalam Bahasa Indonesia hanya berdasarkan DATA NYATA JSON di bawah ini.
+JANGAN mengarang angka. Jika data tidak ada, katakan tidak ada data. Jangan menawarkan mengubah data atau memposting jurnal.
+DATA NYATA (${periode}): ${JSON.stringify(fakta)}
+PERTANYAAN (${u.peran}): ${pertanyaan}`;
+
+          const resp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+              }),
+            },
+          );
+          if (resp.ok) {
+            const json = (await resp.json()) as {
+              candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+            };
+            const teks = json.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+            if (teks) {
+              jawaban = teks;
+              sumberModel = model;
+            }
+          }
+        } catch {
+          // Fallback ke analitik lokal di bawah
+        }
+      }
+
+      if (!jawaban) {
+        const q = pertanyaan.toLowerCase();
+        if (q.includes('laba') || q.includes('omzet') || q.includes('untung')) {
+          if (fakta.laba_kotor_bulan_ini === null) {
+            jawaban = 'Peran Anda tidak memiliki akses ke angka keuangan/laba.';
+          } else if (fakta.transaksi_bulan_ini === 0) {
+            jawaban = `Belum ada data penjualan pada periode ${periode}, sehingga omzet dan laba kotor masih Rp 0.`;
+          } else {
+            jawaban = `Pada periode ${periode}, tercatat ${fakta.transaksi_bulan_ini} transaksi dengan omzet Rp ${fakta.omzet_bulan_ini!.toLocaleString('id-ID')} dan laba kotor Rp ${fakta.laba_kotor_bulan_ini.toLocaleString('id-ID')}.`;
+          }
+        } else if (q.includes('kedaluwarsa') || q.includes('expired') || q.includes('fefo')) {
+          jawaban = `Saat ini terdapat ${fakta.batch_near_expired_90h} batch aktif yang akan kedaluwarsa dalam 90 hari ke depan.`;
+        } else if (q.includes('stok') || q.includes('defekta') || q.includes('beli')) {
+          jawaban = `Terdapat ${fakta.barang_defekta} barang di bawah stok minimum yang perlu masuk Buku Defekta / Surat Pesanan.`;
+        } else {
+          jawaban = `Ringkasan data nyata periode ${periode}: ${fakta.transaksi_bulan_ini} transaksi, ${fakta.barang_defekta} barang defekta, dan ${fakta.batch_near_expired_90h} batch mendekati kedaluwarsa.${fakta.omzet_bulan_ini !== null ? ` Omzet bulan ini Rp ${fakta.omzet_bulan_ini.toLocaleString('id-ID')} (laba kotor Rp ${fakta.laba_kotor_bulan_ini!.toLocaleString('id-ID')}).` : ''}`;
+        }
+      }
+
+      return reply.status(200).send({
+        data: {
+          jawaban,
+          periode,
+          sumber: `Database Apotek (${sumberModel})`,
+          fakta,
+        },
+      });
+    },
+  );
 }

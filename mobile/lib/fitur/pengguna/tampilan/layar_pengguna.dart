@@ -164,7 +164,9 @@ class _LayarPenggunaState extends ConsumerState<LayarPengguna> {
                                                 'kata_sandi_baru': ctrl.text
                                               },
                                             ));
-                                        if (mounted) Navigator.pop(context);
+                                        if (context.mounted) {
+                                          Navigator.pop(context);
+                                        }
                                       } on GalatApi catch (_) {}
                                     },
                                   ),

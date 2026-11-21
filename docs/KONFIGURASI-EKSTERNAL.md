@@ -1,0 +1,14 @@
+# Konfigurasi Eksternal — PharmaPOS (KADIN Bengkalis)
+
+Dokumen ini mencatat integrasi eksternal dan keputusan bisnis yang membutuhkan kredensial atau konfirmasi resmi sebelum diaktifkan di lingkungan produksi. Selama belum dikonfigurasi, sistem berjalan menggunakan adapter aman (tanpa mengklaim integrasi aktif).
+
+| No | Integrasi / Ketentuan | Variabel Lingkungan / Konfigurasi | Status Saat Ini | Tindakan yang Diperlukan |
+|---|---|---|---|---|
+| 1 | **Google Gemini API (Asisten AI)** | `GEMINI_API_KEY`, `GEMINI_MODEL` (default: `gemini-2.5-flash`) | Adapter siap di backend (`backend/src/modul/ai/rute.ts`). Bila `GEMINI_API_KEY` kosong, asisten menjawab memakai ringkasan terstruktur langsung dari data PostgreSQL tanpa mengarang angka. | Isi `GEMINI_API_KEY` di `.env` backend (jangan pernah di klien Flutter). |
+| 2 | **Penyedia Pembayaran QRIS / Gateway** | `PEMBAYARAN_DRIVER`, `PEMBAYARAN_WEBHOOK_SECRET` | Antarmuka `GerbangPembayaran` tersedia. Mode default: `mock` (pengembangan) dan **konfirmasi manual kasir** (nomor referensi dicatat manual oleh kasir). | Pilih penyedia resmi (Midtrans / Xendit / QRIS Bank Riau Kepri / BRI) dan pasang implementasi `GerbangPembayaran`. |
+| 3 | **Penyedia WhatsApp Business API** | `WA_PROVIDER`, `WA_API_KEY`, `WA_SENDER_ID` | Antarmuka `MessagingProvider` siap; selama belum dikonfigurasi, tombol **Bagikan** memakai *share sheet* perangkat dan dicatat sebagai *"dibagikan oleh pengguna"*. | Konfirmasi penyedia resmi (Wablas / Fonnte / Meta Cloud API) bila ingin pengiriman otomatis dengan status callback. |
+| 4 | **Pelaporan Golongan Khusus (Dinkes / BPOM / SIPNAP)** | Format ekspor CSV/tabel | Ekspor register golongan khusus (saldo awal, masuk, keluar, saldo akhir) tersedia dalam JSON dan CSV UTF-8 BOM. **Tidak terhubung langsung ke sistem pemerintah.** | Konfirmasi format kolom resmi Dinas Kesehatan Kabupaten Bengkalis / SIPNAP BPOM. |
+| 5 | **Format Resmi Surat Pesanan (SP)** | Template SP per golongan | Surat Pesanan (Umum, Prekursor, Psikotropika, Narkotika) dapat dibuat, ditandatangani APA, dan dibagikan. | Sesuaikan kop/tata letak cetak SP dengan peraturan BPOM terbaru untuk tiap golongan. |
+| 6 | **Push Notification (FCM)** | `FCM_SERVICE_ACCOUNT_JSON` | Notifikasi dalam aplikasi (in-app) aktif via penjadwal harian 06:00 WIB & bulanan. | Buat proyek Firebase dan unggah kredensial service account bila push background diperlukan. |
+| 7 | **Domain, TLS & Hosting Cloud** | `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN` | Berjalan lokal (PostgreSQL + Fastify + Flutter Web/Android). | Sediakan server VPS/Cloud (mis. Cloud Run / VPS Linux + Nginx TLS + backup harian `pg_dump` terjadwal). |
+| 8 | **Logo Resmi KADIN Bengkalis** | Aset gambar resmi | Menggunakan teks *"Untuk Apotek Binaan KADIN Bengkalis"* tanpa logo tiruan. | Serahkan berkas PNG/SVG resmi KADIN Bengkalis bila ingin ditampilkan pada kop cetak & halaman Tentang. |

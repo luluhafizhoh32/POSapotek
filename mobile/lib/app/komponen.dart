@@ -97,14 +97,9 @@ class AppBarPharma extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF047857),
-            Color(0xFF059669),
-            Color(0xFF10B981),
-          ],
+        color: AppColors.surface,
+        border: Border(
+          bottom: BorderSide(color: AppColors.border, width: 1),
         ),
       ),
       child: SafeArea(
@@ -113,7 +108,7 @@ class AppBarPharma extends StatelessWidget implements PreferredSizeWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
-              const LogoPharmaPos(ukuran: 36, terbalik: true),
+              const LogoPharmaPos(ukuran: 34),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -121,21 +116,20 @@ class AppBarPharma extends StatelessWidget implements PreferredSizeWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'PharmaPOS',
-                      style: TokenTipografi.dasar.copyWith(
-                        color: Colors.white,
+                      subjudul ?? 'PharmaPOS',
+                      style: TokenTipografi.subjudul.copyWith(
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
                         height: 1.1,
                       ),
                     ),
-                    if (subjudul != null)
-                      Text(
-                        subjudul!,
-                        style: TokenTipografi.keterangan.copyWith(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          height: 1.1,
-                        ),
+                    Text(
+                      'PharmaPOS · KADIN Bengkalis',
+                      style: TokenTipografi.keterangan.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.15,
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -143,18 +137,16 @@ class AppBarPharma extends StatelessWidget implements PreferredSizeWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: AppColors.primaryTint,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.35),
-                  ),
+                  border: Border.all(color: AppColors.primarySoft),
                 ),
                 child: Text(
-                  '• $peranLabel',
+                  peranLabel,
                   style: TokenTipografi.keterangan.copyWith(
-                    color: Colors.white,
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.4,
                   ),
                 ),
               ),
@@ -165,7 +157,8 @@ class AppBarPharma extends StatelessWidget implements PreferredSizeWidget {
                   icon: Badge(
                     isLabelVisible: jumlahNotifikasi > 0,
                     label: Text('$jumlahNotifikasi'),
-                    child: const Icon(LucideIcons.bell, color: Colors.white),
+                    child: const Icon(LucideIcons.bell,
+                        color: AppColors.textPrimary),
                   ),
                 ),
             ],

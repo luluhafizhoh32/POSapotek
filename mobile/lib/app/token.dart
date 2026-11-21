@@ -1,97 +1,153 @@
 import 'package:material_ui/material_ui.dart';
 
-/// Token desain resmi PharmaPOS — Apotek Binaan KADIN Bengkalis.
-abstract final class WarnaMentah {
-  // Utama (Emerald PharmaPOS)
-  static const utama50 = Color(0xFFECFDF5);
-  static const utama100 = Color(0xFFD1FAE5);
-  static const utama200 = Color(0xFFA7F3D0);
-  static const utama300 = Color(0xFF6EE7B7);
-  static const utama400 = Color(0xFF34D399);
-  static const utama500 = Color(0xFF10B981);
-  static const utama600 = Color(0xFF059669);
-  static const utama700 = Color(0xFF047857);
-  static const utama800 = Color(0xFF065F46);
-  static const utama900 = Color(0xFF064E3B);
+/// Satu sumber kebenaran token desain PharmaPOS v2.1 (KADIN Bengkalis).
+/// Palet: 80% netral (#F8FAFB / #FFFFFF / #E5E9EC), 15% Deep Teal (#0F766E), 5% status.
+abstract final class AppColors {
+  // Primary (Deep Teal)
+  static const primary = Color(0xFF0F766E);
+  static const primaryHover = Color(0xFF115E59);
+  static const primaryPressed = Color(0xFF134E4A);
+  static const primarySoft = Color(0xFFCCFBF1);
+  static const primaryTint = Color(0xFFF0FDFA);
+  static const secondaryMint = Color(0xFF99F6E4);
 
-  // Aksen AI (Violet PharmaPOS)
-  static const ai50 = Color(0xFFF5F3FF);
-  static const ai100 = Color(0xFFEDE9FE);
-  static const ai600 = Color(0xFF7C3AED);
-  static const ai700 = Color(0xFF6D28D9);
+  // Neutral
+  static const background = Color(0xFFF8FAFB);
+  static const surface = Color(0xFFFFFFFF);
+  static const surfaceAlt = Color(0xFFF1F5F9);
+  static const border = Color(0xFFE5E9EC);
+  static const borderStrong = Color(0xFFCBD5E1);
+  static const textPrimary = Color(0xFF0F172A);
+  static const textSecondary = Color(0xFF64748B);
+  static const textMuted = Color(0xFF94A3B8);
+  static const textOnPrimary = Color(0xFFFFFFFF);
+
+  // Status
+  static const success = Color(0xFF16A34A);
+  static const successBg = Color(0xFFDCFCE7);
+  static const warning = Color(0xFFD97706);
+  static const warningBg = Color(0xFFFEF3C7);
+  static const danger = Color(0xFFDC2626);
+  static const dangerBg = Color(0xFFFEE2E2);
+  static const info = Color(0xFF0284C7);
+  static const infoBg = Color(0xFFE0F2FE);
+}
+
+abstract final class AppMotion {
+  static const fast = Duration(milliseconds: 150);
+  static const normal = Duration(milliseconds: 250);
+  static const curve = Curves.easeOut;
+}
+
+abstract final class AppShadows {
+  static const List<BoxShadow> card = [
+    BoxShadow(
+      color: Color(0x0A0F172A),
+      offset: Offset(0, 1),
+      blurRadius: 2,
+    ),
+  ];
+
+  static const List<BoxShadow> floating = [
+    BoxShadow(
+      color: Color(0x180F172A),
+      offset: Offset(0, 4),
+      blurRadius: 16,
+    ),
+  ];
+}
+
+/// Alias kompatibilitas untuk kode yang memakai WarnaMentah / Token*.
+abstract final class WarnaMentah {
+  static const utama50 = AppColors.primaryTint;
+  static const utama100 = AppColors.primarySoft;
+  static const utama200 = AppColors.secondaryMint;
+  static const utama300 = Color(0xFF5EEAD4);
+  static const utama400 = Color(0xFF2DD4BF);
+  static const utama500 = Color(0xFF14B8A6);
+  static const utama600 = AppColors.primary;
+  static const utama700 = AppColors.primaryHover;
+  static const utama800 = AppColors.primaryPressed;
+  static const utama900 = Color(0xFF042F2E);
+
+  // Aksen AI (selaras dengan Deep Teal, tanpa warna aksen berlebih)
+  static const ai50 = AppColors.primaryTint;
+  static const ai100 = AppColors.primarySoft;
+  static const ai600 = AppColors.primary;
+  static const ai700 = AppColors.primaryHover;
 
   // Netral
-  static const netral50 = Color(0xFFF9F9FB);
-  static const netral100 = Color(0xFFF0F1F5);
-  static const netral200 = Color(0xFFE1E4EA);
-  static const netral300 = Color(0xFFCBCFD8);
-  static const netral400 = Color(0xFF8790A1);
-  static const netral500 = Color(0xFF6A7181);
-  static const netral600 = Color(0xFF515867);
-  static const netral700 = Color(0xFF3A4150);
-  static const netral800 = Color(0xFF232834);
-  static const netral900 = Color(0xFF131720);
-  static const putih = Color(0xFFFFFFFF);
+  static const netral50 = AppColors.background;
+  static const netral100 = AppColors.surfaceAlt;
+  static const netral200 = AppColors.border;
+  static const netral300 = AppColors.borderStrong;
+  static const netral400 = AppColors.textMuted;
+  static const netral500 = AppColors.textSecondary;
+  static const netral600 = Color(0xFF475569);
+  static const netral700 = Color(0xFF334155);
+  static const netral800 = Color(0xFF1E293B);
+  static const netral900 = AppColors.textPrimary;
+  static const putih = AppColors.surface;
 
   // Semantik
-  static const berhasil600 = Color(0xFF1B7A4B);
-  static const berhasil50 = Color(0xFFE6F4EC);
+  static const berhasil600 = AppColors.success;
+  static const berhasil50 = AppColors.successBg;
 
-  static const peringatan700 = Color(0xFF92400E);
-  static const peringatan50 = Color(0xFFFEF3C7);
+  static const peringatan700 = AppColors.warning;
+  static const peringatan50 = AppColors.warningBg;
 
-  static const bahaya600 = Color(0xFFC01F2E);
-  static const bahaya700 = Color(0xFF9A1B27);
-  static const bahaya50 = Color(0xFFFDECEE);
+  static const bahaya600 = AppColors.danger;
+  static const bahaya700 = Color(0xFFB91C1C);
+  static const bahaya50 = AppColors.dangerBg;
 
-  static const informasi600 = Color(0xFF0E7490);
-  static const informasi50 = Color(0xFFE0F2F7);
+  static const informasi600 = AppColors.info;
+  static const informasi50 = AppColors.infoBg;
 }
 
 abstract final class TokenLatar {
-  static const latar = WarnaMentah.putih;
-  static const halaman = WarnaMentah.netral50;
-  static const selang = WarnaMentah.netral100;
-  static const kepalaTabel = WarnaMentah.netral200;
-  static const terpilih = WarnaMentah.utama50;
-  static const nonaktif = WarnaMentah.netral100;
-  static const lapisanDialog = Color(0x80131720);
+  static const latar = AppColors.surface;
+  static const halaman = AppColors.background;
+  static const selang = AppColors.surfaceAlt;
+  static const kepalaTabel = AppColors.surfaceAlt;
+  static const terpilih = AppColors.primaryTint;
+  static const nonaktif = AppColors.surfaceAlt;
+  static const lapisanDialog = Color(0x800F172A);
 }
 
 abstract final class TokenTeks {
-  static const utama = WarnaMentah.netral900;
-  static const sekunder = WarnaMentah.netral700;
-  static const bantu = WarnaMentah.netral600;
-  static const placeholder = WarnaMentah.netral500;
-  static const nonaktif = WarnaMentah.netral500;
-  static const diUtama = WarnaMentah.putih;
+  static const utama = AppColors.textPrimary;
+  static const sekunder = AppColors.textSecondary;
+  static const bantu = AppColors.textSecondary;
+  static const placeholder = AppColors.textMuted;
+  static const nonaktif = AppColors.textMuted;
+  static const diUtama = AppColors.textOnPrimary;
 }
 
 abstract final class TokenAksi {
-  static const utama = WarnaMentah.utama600;
-  static const ditekan = WarnaMentah.utama800;
-  static const disorot = WarnaMentah.utama500;
-  static const fokus = WarnaMentah.utama500;
+  static const utama = AppColors.primary;
+  static const ditekan = AppColors.primaryPressed;
+  static const disorot = AppColors.primaryHover;
+  static const fokus = AppColors.primary;
 }
 
 abstract final class TokenGaris {
-  static const isian = WarnaMentah.netral400;
-  static const pemisah = WarnaMentah.netral200;
+  static const isian = AppColors.borderStrong;
+  static const pemisah = AppColors.border;
 }
 
 abstract final class TokenStatus {
-  static const berhasilTeks = WarnaMentah.berhasil600;
-  static const berhasilLatar = WarnaMentah.berhasil50;
+  static const berhasilTeks = AppColors.success;
+  static const berhasilLatar = AppColors.successBg;
 
-  static const peringatanTeks = WarnaMentah.peringatan700;
-  static const peringatanLatar = WarnaMentah.peringatan50;
+  static const peringatanTeks = AppColors.warning;
+  static const peringatanLatar = AppColors.warningBg;
 
-  static const bahayaTeks = WarnaMentah.bahaya600;
+  static const bahayaTeks = AppColors.danger;
   static const bahayaDitekan = WarnaMentah.bahaya700;
-  static const bahayaLatar = WarnaMentah.bahaya50;
+  static const bahayaLatar = AppColors.dangerBg;
 
-  static const informasiTeks = WarnaMentah.informasi600;
-  static const informasiLatar = WarnaMentah.informasi50;
+  static const informasiTeks = AppColors.info;
+  static const informasiLatar = AppColors.infoBg;
 }
 
 abstract final class TokenJarak {
@@ -112,13 +168,15 @@ abstract final class TokenUkuran {
   static const double tinggiKepalaTabel = 40;
   static const double tinggiBilahAtas = 56;
   static const double tinggiBilahBawah = 64;
-  static const double ukuranIkon = 24;
+  static const double ukuranIkon = 22;
   static const double lebarLayarPatokan = 360;
 }
 
 abstract final class TokenRadius {
   static const double kecil = 8;
   static const double sedang = 12;
+  static const double besar = 16;
+  static const double sheet = 24;
 }
 
 abstract final class TokenGarisTebal {
@@ -129,26 +187,13 @@ abstract final class TokenGarisTebal {
 }
 
 abstract final class TokenBayangan {
-  static const List<BoxShadow> menu = [
-    BoxShadow(
-      color: Color(0x1F000000),
-      offset: Offset(0, 2),
-      blurRadius: 8,
-    ),
-  ];
-
-  static const List<BoxShadow> dialog = [
-    BoxShadow(
-      color: Color(0x29000000),
-      offset: Offset(0, 4),
-      blurRadius: 16,
-    ),
-  ];
+  static const List<BoxShadow> menu = AppShadows.card;
+  static const List<BoxShadow> dialog = AppShadows.floating;
 }
 
 abstract final class TokenTipografi {
-  static const String fontKeluarga = 'IBMPlexSans';
-  static const List<String> fontCadangan = ['sans-serif'];
+  static const String fontKeluarga = 'Plus Jakarta Sans';
+  static const List<String> fontCadangan = ['Inter', 'sans-serif'];
 
   static const TextStyle ringkasan = TextStyle(
     fontFamily: fontKeluarga,
@@ -157,6 +202,7 @@ abstract final class TokenTipografi {
     height: 40 / 32,
     fontWeight: FontWeight.w700,
     color: TokenTeks.utama,
+    letterSpacing: -0.5,
   );
 
   static const TextStyle judul = TextStyle(
@@ -166,6 +212,7 @@ abstract final class TokenTipografi {
     height: 32 / 24,
     fontWeight: FontWeight.w700,
     color: TokenTeks.utama,
+    letterSpacing: -0.3,
   );
 
   static const TextStyle seksi = TextStyle(
@@ -175,13 +222,23 @@ abstract final class TokenTipografi {
     height: 28 / 20,
     fontWeight: FontWeight.w600,
     color: TokenTeks.utama,
+    letterSpacing: -0.2,
+  );
+
+  static const TextStyle subjudul = TextStyle(
+    fontFamily: fontKeluarga,
+    fontFamilyFallback: fontCadangan,
+    fontSize: 16,
+    height: 24 / 16,
+    fontWeight: FontWeight.w600,
+    color: TokenTeks.utama,
   );
 
   static const TextStyle dasar = TextStyle(
     fontFamily: fontKeluarga,
     fontFamilyFallback: fontCadangan,
-    fontSize: 16,
-    height: 24 / 16,
+    fontSize: 15,
+    height: 22 / 15,
     fontWeight: FontWeight.w400,
     color: TokenTeks.utama,
   );
@@ -200,7 +257,7 @@ abstract final class TokenTipografi {
     fontFamilyFallback: fontCadangan,
     fontSize: 12,
     height: 16 / 12,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w500,
     color: TokenTeks.bantu,
   );
 
