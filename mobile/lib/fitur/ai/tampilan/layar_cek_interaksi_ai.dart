@@ -367,9 +367,8 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
                     width: 10,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: item.keras
-                          ? TokenStatus.bahayaTeks
-                          : TokenAksi.utama,
+                      color:
+                          item.keras ? TokenStatus.bahayaTeks : TokenAksi.utama,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -533,9 +532,8 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
                         margin: const EdgeInsets.only(bottom: TokenJarak.j2),
                         padding: const EdgeInsets.all(TokenJarak.j3),
                         decoration: BoxDecoration(
-                          color: tinggi
-                              ? const Color(0xFFFEF3C7)
-                              : Colors.white,
+                          color:
+                              tinggi ? const Color(0xFFFEF3C7) : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(

@@ -374,8 +374,8 @@ class _LayarOpnameState extends ConsumerState<LayarOpname> {
                                       padding: const EdgeInsets.only(bottom: 2),
                                       child: Text(
                                         '• ${b.barangNama} (${b.nomorBatch})',
-                                        style: TokenTipografi.keterangan
-                                            .copyWith(
+                                        style:
+                                            TokenTipografi.keterangan.copyWith(
                                           color: TokenStatus.bahayaTeks,
                                           fontWeight: FontWeight.w600,
                                         ),
