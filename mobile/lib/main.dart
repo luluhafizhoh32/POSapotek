@@ -47,6 +47,50 @@ class _PosApotekAppState extends ConsumerState<PosApotekApp> {
         mui.DefaultMaterialLocalizations.delegate,
       ],
       routerConfig: router,
+      builder: (context, child) {
+        if (child == null) return const SizedBox.shrink();
+        return LayoutBuilder(
+          builder: (ctx, constraints) {
+            // Di layar lebar (Website laptop/tablet), tampilkan dalam bingkai
+            // mobile yang rapi di tengah agar proporsional seperti di HP.
+            if (constraints.maxWidth > 540) {
+              return Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFE6F4EE),
+                      Color(0xFFF3F8F6),
+                      Color(0xFFE8F1FA),
+                    ],
+                  ),
+                ),
+                child: Center(
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    margin: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x1F064E3B),
+                          blurRadius: 32,
+                          offset: Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: child,
+                  ),
+                ),
+              );
+            }
+            return child;
+          },
+        );
+      },
     );
   }
 }

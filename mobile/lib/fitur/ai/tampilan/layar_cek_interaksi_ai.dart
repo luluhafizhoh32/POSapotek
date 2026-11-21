@@ -88,8 +88,9 @@ class _LayarCekInteraksiAiState extends ConsumerState<LayarCekInteraksiAi> {
         (_hasil?['peringatan'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('AI Drug Safety Checker'),
+      appBar: const AppBarPharma(
+        peranLabel: 'APOTEKER',
+        subjudul: 'AI Drug Safety Checker',
       ),
       body: ListView(
         padding: const EdgeInsets.all(TokenJarak.j4),

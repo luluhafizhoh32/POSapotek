@@ -5,7 +5,7 @@ ThemeData bangunTemaPos() {
   return ThemeData(
     useMaterial3: true,
     fontFamily: TokenTipografi.fontKeluarga,
-    scaffoldBackgroundColor: TokenLatar.halaman,
+    scaffoldBackgroundColor: const Color(0xFFF3F7F5),
     colorScheme: const ColorScheme.light(
       primary: TokenAksi.utama,
       onPrimary: TokenTeks.diUtama,
@@ -14,17 +14,23 @@ ThemeData bangunTemaPos() {
       error: TokenStatus.bahayaTeks,
       onError: TokenTeks.diUtama,
     ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: TokenLatar.latar,
-      foregroundColor: TokenTeks.utama,
+    appBarTheme: AppBarTheme(
+      backgroundColor: TokenAksi.utama,
+      foregroundColor: TokenTeks.diUtama,
       elevation: 0,
       toolbarHeight: TokenUkuran.tinggiBilahAtas,
-      titleTextStyle: TokenTipografi.seksi,
-      iconTheme:
-          IconThemeData(color: TokenTeks.utama, size: TokenUkuran.ukuranIkon),
-      shape: Border(
-          bottom:
-              BorderSide(color: TokenGaris.pemisah, width: TokenGarisTebal.t1)),
+      titleTextStyle:
+          TokenTipografi.seksi.copyWith(color: TokenTeks.diUtama),
+      iconTheme: const IconThemeData(
+          color: TokenTeks.diUtama, size: TokenUkuran.ukuranIkon),
+    ),
+    cardTheme: CardThemeData(
+      color: TokenLatar.latar,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(TokenRadius.sedang),
+        side: const BorderSide(color: TokenGaris.pemisah),
+      ),
     ),
     dividerTheme: const DividerThemeData(
       color: TokenGaris.pemisah,

@@ -23,6 +23,7 @@ class LayarBerandaPemilik extends ConsumerStatefulWidget {
 
 class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
   Map<String, dynamic>? _data;
+  Map<String, dynamic>? _insight;
   bool _memuat = true;
 
   @override
@@ -36,8 +37,16 @@ class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
     try {
       final k = ref.read(klienApiProvider);
       final res = await k.kirim(() => k.dio.get('/ringkasan'));
+      Map<String, dynamic>? ins;
+      try {
+        final resIns = await k.kirim(() => k.dio.get('/ai/insight'));
+        ins = resIns.data['data'] as Map<String, dynamic>?;
+      } catch (_) {}
       if (mounted) {
-        setState(() => _data = res.data['data'] as Map<String, dynamic>);
+        setState(() {
+          _data = res.data['data'] as Map<String, dynamic>;
+          _insight = ins;
+        });
       }
     } catch (_) {
     } finally {
@@ -45,20 +54,30 @@ class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
     }
   }
 
-  Widget _kartu(String judul, String nilai) {
+  Widget _kartuMini(String judul, String nilai, Color latar, Color aksen) {
     return Container(
-      padding: const EdgeInsets.all(TokenJarak.j4),
+      padding: const EdgeInsets.all(TokenJarak.j3),
       decoration: BoxDecoration(
-        color: TokenLatar.latar,
-        border: Border.all(color: TokenGaris.pemisah),
-        borderRadius: BorderRadius.circular(TokenRadius.kecil),
+        color: latar,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: aksen.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(judul, style: TokenTipografi.keterangan),
-          const SizedBox(height: TokenJarak.j1),
-          Text(nilai, style: TokenTipografi.angkaTabular(TokenTipografi.judul)),
+          Text(
+            nilai,
+            style: TokenTipografi.angkaTabular(TokenTipografi.judul)
+                .copyWith(color: aksen, fontSize: 22),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            judul,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TokenTipografi.keterangan
+                .copyWith(color: aksen, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -66,20 +85,30 @@ class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
 
   @override
   Widget build(BuildContext context) {
+    final omzetHariIni = ((_data?['omzet_hari_ini'] ?? 0) as num).toInt();
+    final trxHariIni = ((_data?['jumlah_transaksi_hari_ini'] ?? 0) as num).toInt();
+    final labaBulanIni =
+        ((_insight?['ringkasan']?['laba_bulan_ini'] ?? 0) as num).toInt();
+    final tren = (_insight?['tren_7_hari'] as List?)
+            ?.cast<Map<String, dynamic>>() ??
+        [];
+    final bayar = (_insight?['distribusi_pembayaran'] as List?)
+            ?.cast<Map<String, dynamic>>() ??
+        [];
+    final maxOmzet = tren.fold<int>(
+      1,
+      (m, e) {
+        final v = (e['omzet'] as num).toInt();
+        return v > m ? v : m;
+      },
+    );
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Beranda'),
-        actions: [
-          if (widget.onBukaNotifikasi != null)
-            IconButton(
-              onPressed: widget.onBukaNotifikasi,
-              icon: Badge(
-                isLabelVisible: widget.jumlahNotifikasi > 0,
-                label: Text('${widget.jumlahNotifikasi}'),
-                child: const Icon(LucideIcons.bell),
-              ),
-            ),
-        ],
+      appBar: AppBarPharma(
+        peranLabel: 'OWNER',
+        subjudul: 'Dashboard Pemilik',
+        onBukaNotifikasi: widget.onBukaNotifikasi,
+        jumlahNotifikasi: widget.jumlahNotifikasi,
       ),
       body: RefreshIndicator(
         onRefresh: _muat,
@@ -88,21 +117,272 @@ class _LayarBerandaPemilikState extends ConsumerState<LayarBerandaPemilik> {
             : ListView(
                 padding: const EdgeInsets.all(TokenJarak.j4),
                 children: [
-                  _kartu(
-                      'Omzet Hari Ini',
-                      formatRupiah(
-                          ((_data!['omzet_hari_ini'] ?? 0) as num).toInt())),
+                  Text('Selamat datang, Pemilik Apotek',
+                      style: TokenTipografi.seksi),
+                  const SizedBox(height: 2),
+                  Text('Ringkasan performa apotek hari ini secara real-time',
+                      style: TokenTipografi.keterangan),
+                  const SizedBox(height: TokenJarak.j4),
+                  // 2 Kartu Hero KPI berdampingan seperti video PharmaPOS
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF047857), Color(0xFF10B981)],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x26059669),
+                                blurRadius: 14,
+                                offset: Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Omzet Hari Ini',
+                                style: TokenTipografi.keterangan.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9)),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                formatRupiah(omzetHariIni),
+                                style: TokenTipografi.angkaTabular(
+                                        TokenTipografi.seksi)
+                                    .copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '$trxHariIni transaksi hari ini',
+                                  style: TokenTipografi.keterangan.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: TokenJarak.j3),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: TokenGaris.pemisah),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x0D064E3B),
+                                blurRadius: 12,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Laba Bulan Ini',
+                                  style: TokenTipografi.keterangan),
+                              const SizedBox(height: 6),
+                              Text(
+                                formatRupiah(labaBulanIni),
+                                style: TokenTipografi.angkaTabular(
+                                        TokenTipografi.seksi)
+                                    .copyWith(
+                                        color: TokenAksi.utama,
+                                        fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: TokenStatus.berhasilLatar,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Margin real-time',
+                                  style: TokenTipografi.keterangan.copyWith(
+                                      color: TokenStatus.berhasilTeks,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: TokenJarak.j3),
-                  _kartu('Transaksi Hari Ini',
-                      '${_data!['jumlah_transaksi_hari_ini'] ?? 0}'),
-                  const SizedBox(height: TokenJarak.j3),
-                  _kartu('Pengajuan Menunggu',
-                      '${_data!['pengajuan_menunggu'] ?? 0}'),
-                  const SizedBox(height: TokenJarak.j3),
-                  _kartu('Batch Near-Expired',
-                      '${_data!['near_expired_batch'] ?? 0}'),
-                  const SizedBox(height: TokenJarak.j3),
-                  _kartu('Barang Defekta', '${_data!['defekta_barang'] ?? 0}'),
+                  // 3 Status Operasional
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _kartuMini(
+                          'Pengajuan',
+                          '${_data!['pengajuan_menunggu'] ?? 0}',
+                          TokenStatus.informasiLatar,
+                          TokenStatus.informasiTeks,
+                        ),
+                      ),
+                      const SizedBox(width: TokenJarak.j2),
+                      Expanded(
+                        child: _kartuMini(
+                          'Near-Expired',
+                          '${_data!['near_expired_batch'] ?? 0}',
+                          TokenStatus.peringatanLatar,
+                          TokenStatus.peringatanTeks,
+                        ),
+                      ),
+                      const SizedBox(width: TokenJarak.j2),
+                      Expanded(
+                        child: _kartuMini(
+                          'Defekta',
+                          '${_data!['defekta_barang'] ?? 0}',
+                          TokenStatus.bahayaLatar,
+                          TokenStatus.bahayaTeks,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (tren.isNotEmpty) ...[
+                    const SizedBox(height: TokenJarak.j4),
+                    Container(
+                      padding: const EdgeInsets.all(TokenJarak.j4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: TokenGaris.pemisah),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Grafik Penjualan 7 Hari Terakhir',
+                              style: TokenTipografi.dasar
+                                  .copyWith(fontWeight: FontWeight.w700)),
+                          const SizedBox(height: TokenJarak.j3),
+                          SizedBox(
+                            height: 116,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: tren.map((t) {
+                                final omz = (t['omzet'] as num).toInt();
+                                final rasio = maxOmzet > 0
+                                    ? (omz / maxOmzet).clamp(0.1, 1.0)
+                                    : 0.1;
+                                return Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 4),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Expanded(
+                                          child: Align(
+                                            alignment: Alignment.bottomCenter,
+                                            child: FractionallySizedBox(
+                                              heightFactor: rasio,
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  gradient:
+                                                      const LinearGradient(
+                                                    begin: Alignment.bottomCenter,
+                                                    end: Alignment.topCenter,
+                                                    colors: [
+                                                      Color(0xFF059669),
+                                                      Color(0xFF34D399),
+                                                    ],
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(t['label'] as String,
+                                            style: TokenTipografi.keterangan),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (bayar.isNotEmpty) ...[
+                    const SizedBox(height: TokenJarak.j4),
+                    Container(
+                      padding: const EdgeInsets.all(TokenJarak.j4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: TokenGaris.pemisah),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Distribusi Metode Pembayaran',
+                              style: TokenTipografi.dasar
+                                  .copyWith(fontWeight: FontWeight.w700)),
+                          const SizedBox(height: TokenJarak.j3),
+                          ...bayar.map((b) {
+                            final persen = (b['persen'] as num).toInt();
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: TokenJarak.j2),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(b['label'] as String,
+                                          style: TokenTipografi.tabel),
+                                      Text('$persen%',
+                                          style: TokenTipografi.tabel.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: TokenAksi.utama)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  LinearProgressIndicator(
+                                    value: persen / 100.0,
+                                    minHeight: 7,
+                                    backgroundColor: TokenLatar.selang,
+                                    color: TokenAksi.utama,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
       ),

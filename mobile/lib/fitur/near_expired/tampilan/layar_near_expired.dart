@@ -90,7 +90,10 @@ class _LayarNearExpiredState extends ConsumerState<LayarNearExpired> {
     final isSg = ref.watch(sesiProvider).pengguna?.peran == 'staf_gudang';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Near-Expired')),
+      appBar: AppBarPharma(
+        peranLabel: isSg ? 'GUDANG' : 'APOTEKER',
+        subjudul: 'Pemantauan Near-Expired & FEFO',
+      ),
       body: RefreshIndicator(
         onRefresh: _muat,
         child: _memuat || _data == null

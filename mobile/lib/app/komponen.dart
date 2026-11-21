@@ -4,6 +4,128 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../inti/format.dart';
 import 'token.dart';
 
+/// Header Gradient PharmaPOS dengan logo + badge peran (KASIR / APOTEKER / GUDANG / OWNER).
+class AppBarPharma extends StatelessWidget implements PreferredSizeWidget {
+  final String peranLabel;
+  final String? subjudul;
+  final VoidCallback? onBukaNotifikasi;
+  final int jumlahNotifikasi;
+  final List<Widget>? aksiTambahan;
+
+  const AppBarPharma({
+    super.key,
+    required this.peranLabel,
+    this.subjudul,
+    this.onBukaNotifikasi,
+    this.jumlahNotifikasi = 0,
+    this.aksiTambahan,
+  });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(64);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF047857),
+            Color(0xFF059669),
+            Color(0xFF10B981),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x26000000),
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  LucideIcons.plus,
+                  color: WarnaMentah.utama600,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'PharmaPOS',
+                      style: TokenTipografi.dasar.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
+                      ),
+                    ),
+                    if (subjudul != null)
+                      Text(
+                        subjudul!,
+                        style: TokenTipografi.keterangan.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          height: 1.1,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Text(
+                  '• $peranLabel',
+                  style: TokenTipografi.keterangan.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              if (aksiTambahan != null) ...aksiTambahan!,
+              if (onBukaNotifikasi != null)
+                IconButton(
+                  onPressed: onBukaNotifikasi,
+                  icon: Badge(
+                    isLabelVisible: jumlahNotifikasi > 0,
+                    label: Text('$jumlahNotifikasi'),
+                    child: const Icon(LucideIcons.bell, color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 enum JenisTombol { utama, sekunder, bahaya }
 
 /// 1. Tombol (tinggi 48, radius 4)

@@ -58,117 +58,208 @@ class _LayarMasukState extends ConsumerState<LayarMasuk> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(TokenJarak.j4),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: TokenAksi.utama,
-                          borderRadius:
-                              BorderRadius.circular(TokenRadius.sedang),
-                        ),
-                        child: const Icon(
-                          LucideIcons.plus,
-                          color: TokenTeks.diUtama,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: TokenJarak.j3),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('PharmaPOS', style: TokenTipografi.judul),
-                            Text(
-                              'Apotek Binaan KADIN Bengkalis',
-                              style: TokenTipografi.keterangan
-                                  .copyWith(color: TokenAksi.utama, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: TokenJarak.j3),
-                  Text(
-                    'POS & Manajemen Apotek dalam Genggaman. Silakan masuk dengan akun Anda.',
-                    style: TokenTipografi.tabel
-                        .copyWith(color: TokenTeks.sekunder),
-                  ),
-                  const SizedBox(height: TokenJarak.j4),
-                  Wrap(
-                    spacing: TokenJarak.j2,
-                    runSpacing: TokenJarak.j2,
-                    children: [
-                      ('Kasir', 'kasir1'),
-                      ('Apoteker', 'apoteker1'),
-                      ('Gudang', 'gudang1'),
-                      ('Owner', 'pemilik1'),
-                    ].map((r) {
-                      final dipilih = _usernameCtrl.text.trim() == r.$2;
-                      return ChoiceChip(
-                        label: Text(r.$1),
-                        selected: dipilih,
-                        selectedColor: TokenLatar.terpilih,
-                        onSelected: (_) {
-                          setState(() {
-                            _usernameCtrl.text = r.$2;
-                            if (_sandiCtrl.text.isEmpty) {
-                              _sandiCtrl.text = 'Demo12345';
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: TokenJarak.j4),
-                  if (_pesanGalat != null) ...[
-                    PesanPos(jenis: JenisPesan.bahaya, teks: _pesanGalat!),
-                    const SizedBox(height: TokenJarak.j4),
+      backgroundColor: const Color(0xFFF3F7F5),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Hero Gradient Emerald seperti video PharmaPOS
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 56, 24, 48),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF065F46),
+                    Color(0xFF059669),
+                    Color(0xFF10B981),
                   ],
-                  IsianTeksPos(
-                    controller: _usernameCtrl,
-                    label: 'Username',
-                    placeholder: 'contoh: kasir1',
-                    keyboardType: TextInputType.text,
-                  ),
-                  const SizedBox(height: TokenJarak.j4),
-                  IsianTeksPos(
-                    controller: _sandiCtrl,
-                    label: 'Kata sandi',
-                    sembunyikan: !_tampilkanSandi,
-                    akhiran: TextButton(
-                      onPressed: () =>
-                          setState(() => _tampilkanSandi = !_tampilkanSandi),
-                      child: Text(
-                        _tampilkanSandi ? 'Sembunyikan' : 'Tampilkan',
-                        style: TokenTipografi.keterangan.copyWith(
-                          color: TokenAksi.utama,
-                          fontWeight: FontWeight.w600,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 16,
+                          offset: Offset(0, 6),
                         ),
-                      ),
+                      ],
+                    ),
+                    child: const Icon(
+                      LucideIcons.plus,
+                      color: WarnaMentah.utama600,
+                      size: 38,
                     ),
                   ),
-                  const SizedBox(height: TokenJarak.j6),
-                  TombolPos(
-                    label: 'Masuk',
-                    memuat: _memuat,
-                    onPressed: _masuk,
+                  const SizedBox(height: 14),
+                  Text(
+                    'PharmaPOS',
+                    style: TokenTipografi.judul.copyWith(
+                      color: Colors.white,
+                      fontSize: 28,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Apotek Binaan KADIN Bengkalis · Riau',
+                    style: TokenTipografi.tabel.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
+            // Floating White Card
+            Transform.translate(
+              offset: const Offset(0, -28),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x14064E3B),
+                        blurRadius: 24,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text('Masuk', style: TokenTipografi.seksi),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Gunakan akun yang terdaftar di apotek Anda',
+                        style: TokenTipografi.keterangan,
+                      ),
+                      const SizedBox(height: TokenJarak.j4),
+                      if (_pesanGalat != null) ...[
+                        PesanPos(jenis: JenisPesan.bahaya, teks: _pesanGalat!),
+                        const SizedBox(height: TokenJarak.j3),
+                      ],
+                      IsianTeksPos(
+                        controller: _usernameCtrl,
+                        label: 'Username / ID Pegawai',
+                        placeholder: 'contoh: kasir1',
+                        keyboardType: TextInputType.text,
+                      ),
+                      const SizedBox(height: TokenJarak.j3),
+                      IsianTeksPos(
+                        controller: _sandiCtrl,
+                        label: 'Kata sandi',
+                        sembunyikan: !_tampilkanSandi,
+                        akhiran: TextButton(
+                          onPressed: () => setState(
+                              () => _tampilkanSandi = !_tampilkanSandi),
+                          child: Text(
+                            _tampilkanSandi ? 'Sembunyikan' : 'Tampilkan',
+                            style: TokenTipografi.keterangan.copyWith(
+                              color: TokenAksi.utama,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: TokenJarak.j4),
+                      Text(
+                        'Masuk cepat sebagai:',
+                        style: TokenTipografi.keterangan
+                            .copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: TokenJarak.j2),
+                      Row(
+                        children: [
+                          ('Kasir', 'kasir1'),
+                          ('Apoteker', 'apoteker1'),
+                          ('Gudang', 'gudang1'),
+                          ('Owner', 'pemilik1'),
+                        ].map((r) {
+                          final dipilih = _usernameCtrl.text.trim() == r.$2;
+                          return Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 2),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () {
+                                  setState(() {
+                                    _usernameCtrl.text = r.$2;
+                                    if (_sandiCtrl.text.isEmpty) {
+                                      _sandiCtrl.text = 'Demo12345';
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: dipilih
+                                        ? TokenAksi.utama
+                                        : TokenLatar.halaman,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: dipilih
+                                          ? TokenAksi.utama
+                                          : TokenGaris.pemisah,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    r.$1,
+                                    textAlign: TextAlign.center,
+                                    style: TokenTipografi.keterangan.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: dipilih
+                                          ? Colors.white
+                                          : TokenTeks.sekunder,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: TokenJarak.j5),
+                      TombolPos(
+                        label: 'Masuk',
+                        memuat: _memuat,
+                        onPressed: _masuk,
+                      ),
+                      const SizedBox(height: TokenJarak.j3),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(LucideIcons.shieldCheck,
+                              size: 14, color: TokenAksi.utama),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Data tersimpan aman & tersinkron ke server',
+                            style: TokenTipografi.keterangan,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

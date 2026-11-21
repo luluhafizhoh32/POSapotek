@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../app/komponen.dart';
 import '../../../app/token.dart';
 import '../../../inti/format.dart';
 import '../../../inti/klien_api.dart';
@@ -57,7 +58,10 @@ class _LayarAiInsightState extends ConsumerState<LayarAiInsight> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Insight & Analitik')),
+      appBar: const AppBarPharma(
+        peranLabel: 'OWNER',
+        subjudul: 'AI Insight & Analitik',
+      ),
       body: RefreshIndicator(
         onRefresh: _muat,
         child: _memuat || _data == null

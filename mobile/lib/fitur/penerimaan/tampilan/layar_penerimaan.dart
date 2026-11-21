@@ -333,7 +333,10 @@ class _LayarPenerimaanState extends ConsumerState<LayarPenerimaan> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Penerimaan Barang')),
+      appBar: const AppBarPharma(
+        peranLabel: 'GUDANG',
+        subjudul: 'Penerimaan PO & Batch',
+      ),
       body: ListView(
         padding: const EdgeInsets.all(TokenJarak.j4),
         children: [

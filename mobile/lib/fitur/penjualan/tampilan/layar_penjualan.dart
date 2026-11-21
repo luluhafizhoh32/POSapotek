@@ -333,19 +333,11 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Penjualan'),
-        actions: [
-          if (widget.onBukaNotifikasi != null)
-            IconButton(
-              onPressed: widget.onBukaNotifikasi,
-              icon: Badge(
-                isLabelVisible: widget.jumlahNotifikasi > 0,
-                label: Text('${widget.jumlahNotifikasi}'),
-                child: const Icon(LucideIcons.bell),
-              ),
-            ),
-        ],
+      appBar: AppBarPharma(
+        peranLabel: 'KASIR',
+        subjudul: 'Kasir POS',
+        onBukaNotifikasi: widget.onBukaNotifikasi,
+        jumlahNotifikasi: widget.jumlahNotifikasi,
       ),
       body: Column(
         children: [
@@ -430,11 +422,19 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                     }
 
                     return Container(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: TokenJarak.j2),
-                      decoration: const BoxDecoration(
-                        border: Border(
-                            bottom: BorderSide(color: TokenGaris.pemisah)),
+                      margin: const EdgeInsets.only(bottom: TokenJarak.j2),
+                      padding: const EdgeInsets.all(TokenJarak.j3),
+                      decoration: BoxDecoration(
+                        color: TokenLatar.latar,
+                        borderRadius: BorderRadius.circular(TokenRadius.sedang),
+                        border: Border.all(color: WarnaMentah.utama200),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0D064E3B),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -552,66 +552,130 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
                       b.golongan != 'bebas_terbatas' &&
                       b.golongan != 'keras';
                 }).map(
-                  (b) => InkWell(
-                    onTap: () => _tambahKeKeranjang(b),
-                    child: Container(
-                      constraints: const BoxConstraints(
-                          minHeight: TokenUkuran.tinggiBarisDaftar),
-                      padding:
-                          const EdgeInsets.symmetric(vertical: TokenJarak.j2),
-                      decoration: const BoxDecoration(
-                        border: Border(
-                            bottom: BorderSide(color: TokenGaris.pemisah)),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(b.nama, style: TokenTipografi.dasar),
-                                const SizedBox(height: 2),
-                                Row(
+                  (b) => Padding(
+                    padding: const EdgeInsets.only(bottom: TokenJarak.j2),
+                    child: Material(
+                      color: TokenLatar.latar,
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () => _tambahKeKeranjang(b),
+                        child: Container(
+                          constraints: const BoxConstraints(
+                              minHeight: TokenUkuran.tinggiBarisDaftar),
+                          padding: const EdgeInsets.all(TokenJarak.j3),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: TokenGaris.pemisah),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x0A064E3B),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: b.golongan == 'keras'
+                                      ? TokenStatus.bahayaLatar
+                                      : TokenLatar.terpilih,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  LucideIcons.pill,
+                                  size: 20,
+                                  color: b.golongan == 'keras'
+                                      ? TokenStatus.bahayaTeks
+                                      : TokenAksi.utama,
+                                ),
+                              ),
+                              const SizedBox(width: TokenJarak.j3),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '${b.satuan} · Stok ${b.stokTotal}',
-                                      style: TokenTipografi.keterangan,
+                                      b.nama,
+                                      style: TokenTipografi.dasar.copyWith(
+                                          fontWeight: FontWeight.w600),
                                     ),
-                                    const SizedBox(width: TokenJarak.j2),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: b.golongan == 'keras'
-                                            ? TokenStatus.bahayaLatar
-                                            : TokenStatus.berhasilLatar,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        b.golongan == 'keras'
-                                            ? 'Obat Keras (K)'
-                                            : b.golongan.replaceAll('_', ' '),
-                                        style:
-                                            TokenTipografi.keterangan.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: b.golongan == 'keras'
-                                              ? TokenStatus.bahayaTeks
-                                              : TokenStatus.berhasilTeks,
+                                    const SizedBox(height: 3),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
+                                      children: [
+                                        Text(
+                                          '${b.satuan} · Stok ${b.stokTotal}',
+                                          style: TokenTipografi.keterangan,
                                         ),
-                                      ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: b.golongan == 'keras'
+                                                ? TokenStatus.bahayaLatar
+                                                : TokenStatus.berhasilLatar,
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            b.golongan == 'keras'
+                                                ? 'Obat Keras (K)'
+                                                : b.golongan
+                                                    .replaceAll('_', ' '),
+                                            style: TokenTipografi.keterangan
+                                                .copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              color: b.golongan == 'keras'
+                                                  ? TokenStatus.bahayaTeks
+                                                  : TokenStatus.berhasilTeks,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: TokenJarak.j2),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    formatRupiah(b.hargaJual),
+                                    style: TokenTipografi.angkaTabular(
+                                            TokenTipografi.tabel)
+                                        .copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: TokenAksi.utama,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      color: TokenAksi.utama,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      LucideIcons.plus,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          Text(
-                            formatRupiah(b.hargaJual),
-                            style: TokenTipografi.angkaTabular(
-                                    TokenTipografi.dasar)
-                                .copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
