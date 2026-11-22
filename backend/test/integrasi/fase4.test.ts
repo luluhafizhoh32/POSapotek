@@ -252,20 +252,50 @@ describe('Fase 4: Opname, Pengajuan & Pengesahan Pengurangan, Near-Expired', () 
     expect(opKurang.statusCode).toBe(422);
     expect(opKurang.json().galat.kode).toBe('BATCH_BELUM_DIHITUNG');
 
-    // Selisih lebih tanpa keterangan -> 422 KETERANGAN_WAJIB
+    // Selisih lebih tanpa keterangan -> sekarang BOLEH (201), stok sistem tidak berubah, keterangan null
     const opLebihTanpaKet = await app.inject({
       method: 'POST',
       url: '/api/v1/opname',
       headers: { authorization: `Bearer ${tokenGudang}`, 'idempotency-key': crypto.randomUUID() },
       payload: {
         baris: [
-          { batch_id: batchD, stok_fisik: 50 },
+          { batch_id: batchD, stok_fisik: 52 },
           { batch_id: batchE, stok_fisik: 1005 },
         ],
       },
     });
-    expect(opLebihTanpaKet.statusCode).toBe(422);
-    expect(opLebihTanpaKet.json().galat.kode).toBe('KETERANGAN_WAJIB');
+    expect(opLebihTanpaKet.statusCode).toBe(201);
+    expect(opLebihTanpaKet.json().data.pengajuan).toBeNull();
+    const barisKosong = opLebihTanpaKet.json().data.baris as Array<{ batch_id: number; keterangan: string | null }>;
+    expect(barisKosong.every((b) => b.keterangan === null)).toBe(true);
+
+    // Selisih lebih dengan sebagian keterangan terisi -> terisi tersimpan, yang kosong tetap null
+    const opLebihSebagian = await app.inject({
+      method: 'POST',
+      url: '/api/v1/opname',
+      headers: { authorization: `Bearer ${tokenGudang}`, 'idempotency-key': crypto.randomUUID() },
+      payload: {
+        baris: [
+          { batch_id: batchD, stok_fisik: 53, keterangan: 'Faktur belum dicatat' },
+          { batch_id: batchE, stok_fisik: 1002 },
+        ],
+      },
+    });
+    expect(opLebihSebagian.statusCode).toBe(201);
+    const barisSebagian = opLebihSebagian.json().data.baris as Array<{ batch_id: number; keterangan: string | null }>;
+    expect(barisSebagian.find((b) => b.batch_id === batchD)?.keterangan).toBe('Faktur belum dicatat');
+    expect(barisSebagian.find((b) => b.batch_id === batchE)?.keterangan).toBeNull();
+
+    // Stok sistem D & E tidak berubah akibat selisih lebih
+    const stokSetelahLebih = await withApotek(apotekId, async (c) => {
+      const r = await c.query<{ id: string; stok: number }>(
+        `SELECT id, stok FROM batch_barang WHERE id = ANY($1::bigint[])`,
+        [[batchD, batchE]],
+      );
+      return new Map(r.rows.map((row) => [Number(row.id), row.stok]));
+    });
+    expect(stokSetelahLebih.get(batchD)).toBe(50);
+    expect(stokSetelahLebih.get(batchE)).toBe(1000);
 
     // Opname valid dengan selisih kurang D=0 (dari 50) dan E=1000
     const opValid = await app.inject({

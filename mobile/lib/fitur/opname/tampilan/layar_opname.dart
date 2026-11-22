@@ -226,17 +226,6 @@ class _LayarOpnameState extends ConsumerState<LayarOpname> {
   }
 
   Future<void> _simpanOpname() async {
-    final lebihKosong = _barisTinjauan
-        .where((b) => b.selisih > 0 && b.keteranganCtrl.text.trim().isEmpty)
-        .toList();
-    if (lebihKosong.isNotEmpty) {
-      setState(() {
-        _pesanGalatTinjauan =
-            'Batch dengan selisih lebih wajib mengisi keterangan';
-      });
-      return;
-    }
-
     setState(() {
       _menyimpan = true;
       _pesanGalatTinjauan = null;
@@ -285,12 +274,6 @@ class _LayarOpnameState extends ConsumerState<LayarOpname> {
             _tahap = _TahapOpname.hasil;
           });
         }
-      } else if (g.kode == 'KETERANGAN_WAJIB' && mounted) {
-        setState(() {
-          _kunciIdempoten = const Uuid().v4();
-          _pesanGalatTinjauan =
-              'Batch dengan selisih lebih wajib mengisi keterangan';
-        });
       } else if (mounted) {
         setState(() => _pesanGalatTinjauan = g.pesan);
       }
@@ -632,23 +615,54 @@ class _LayarOpnameState extends ConsumerState<LayarOpname> {
                 if (batchSelisihLebih.isNotEmpty) ...[
                   const SizedBox(height: TokenJarak.j4),
                   Text(
-                    'Keterangan Selisih Lebih (Wajib)',
+                    'Keterangan Selisih Lebih (Opsional)',
                     style: TokenTipografi.seksi,
                   ),
                   const SizedBox(height: TokenJarak.j2),
                   ...batchSelisihLebih.map((b) {
+                    const pilihanCepat = [
+                      'Faktur belum dicatat',
+                      'Lupa dicatat',
+                      'Lainnya',
+                    ];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: TokenJarak.j3),
-                      child: IsianTeksPos(
-                        controller: b.keteranganCtrl,
-                        label:
-                            'Keterangan Selisih Lebih · ${b.barangNama} (${b.nomorBatch})',
-                        placeholder: 'contoh: faktur belum dicatat',
-                        onChanged: (_) {
-                          if (_pesanGalatTinjauan != null) {
-                            setState(() => _pesanGalatTinjauan = null);
-                          }
-                        },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: TokenJarak.j2,
+                            runSpacing: TokenJarak.j1,
+                            children: pilihanCepat.map((opsi) {
+                              final dipilih =
+                                  b.keteranganCtrl.text.trim() == opsi;
+                              return ChoiceChip(
+                                label: Text(opsi),
+                                selected: dipilih,
+                                onSelected: (_) {
+                                  setState(() {
+                                    b.keteranganCtrl.text = opsi;
+                                    b.keteranganCtrl.selection =
+                                        TextSelection.collapsed(
+                                      offset: opsi.length,
+                                    );
+                                    _pesanGalatTinjauan = null;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: TokenJarak.j2),
+                          IsianTeksPos(
+                            controller: b.keteranganCtrl,
+                            label:
+                                'Keterangan Selisih Lebih (opsional) · ${b.barangNama} (${b.nomorBatch})',
+                            placeholder: 'contoh: faktur belum dicatat',
+                            onChanged: (_) {
+                              setState(() => _pesanGalatTinjauan = null);
+                            },
+                          ),
+                        ],
                       ),
                     );
                   }),

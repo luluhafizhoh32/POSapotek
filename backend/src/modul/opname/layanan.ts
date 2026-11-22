@@ -350,28 +350,21 @@ export async function simpanOpnameLayanan(
         ]),
       );
 
-      // Cek keterangan wajib untuk selisih lebih
-      const selisihLebihTanpaKet: number[] = [];
+      // Kumpulkan batch dengan selisih kurang (keterangan selisih lebih bersifat opsional)
       const barisKurang: Array<{ batchId: number; jumlahKurang: number; hargaBeli: number; keterangan: string | null }> = [];
 
       for (const item of input.baris) {
         const info = petaBatch.get(item.batch_id)!;
         const selisih = item.stok_fisik - info.stok;
-        if (selisih > 0 && (!item.keterangan || item.keterangan.trim().length === 0)) {
-          selisihLebihTanpaKet.push(item.batch_id);
-        }
         if (selisih < 0) {
+          const ketBersih = item.keterangan && item.keterangan.trim().length > 0 ? item.keterangan.trim() : null;
           barisKurang.push({
             batchId: item.batch_id,
             jumlahKurang: -selisih,
             hargaBeli: info.hargaBeli,
-            keterangan: item.keterangan ?? null,
+            keterangan: ketBersih,
           });
         }
-      }
-
-      if (selisihLebihTanpaKet.length > 0) {
-        throw new GalatAplikasi('KETERANGAN_WAJIB', { batch_id: selisihLebihTanpaKet });
       }
 
       const nomorOp = await buatNomorDokumen(client, pengguna.apotekId, 'OP', hariIni);
@@ -398,6 +391,8 @@ export async function simpanOpnameLayanan(
         const info = petaBatch.get(item.batch_id)!;
         const selisih = item.stok_fisik - info.stok;
         const nilaiSelisih = selisih * info.hargaBeli;
+        const ketBersih =
+          item.keterangan && item.keterangan.trim().length > 0 ? item.keterangan.trim() : null;
         await client.query(
           `INSERT INTO baris_opname
             (apotek_id, opname_id, batch_id, stok_sistem, stok_fisik, nilai_selisih, keterangan)
@@ -409,7 +404,7 @@ export async function simpanOpnameLayanan(
             info.stok,
             item.stok_fisik,
             nilaiSelisih,
-            item.keterangan ?? null,
+            ketBersih,
           ],
         );
       }
