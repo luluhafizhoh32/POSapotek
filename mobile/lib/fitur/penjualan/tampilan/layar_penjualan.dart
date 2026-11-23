@@ -64,6 +64,8 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
   String _filterGolongan = 'semua';
   bool _pelangganMember = false;
   Map<String, String>? _resep;
+  int? _resepTerverifikasiId;
+  List<Map<String, dynamic>> _resepSiapTebus = [];
   String _kunciIdempoten = const Uuid().v4();
   Timer? _debouncePratinjau;
   bool _sedangOfflineEstimasi = false;
@@ -80,7 +82,173 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
     Future.microtask(() {
       ref.read(penjualanRepositoriProvider).segarkanCacheBarang();
       _cariBarang('');
+      _muatResepSiapTebus();
     });
+  }
+
+  Future<void> _muatResepSiapTebus() async {
+    try {
+      final k = ref.read(klienApiProvider);
+      final res = await k.kirim(
+        () => k.dio.get(
+          '/resep-terverifikasi',
+          queryParameters: {'status': 'siap_ditebus'},
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _resepSiapTebus =
+              (res.data['data'] as List).cast<Map<String, dynamic>>();
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _pilihResepTerverifikasi(Map<String, dynamic> r) async {
+    final repo = ref.read(penjualanRepositoriProvider);
+    final daftarObat = (r['daftar_obat'] as List?) ?? const [];
+    final tidakKetemu = <String>[];
+
+    for (final raw in daftarObat) {
+      final o = raw as Map<String, dynamic>;
+      final nama = (o['nama'] as String? ?? '').trim();
+      if (nama.isEmpty) continue;
+      final kataPertama = nama.split(' ').first;
+      final cocok = await repo.cariBarang(q: kataPertama);
+      if (cocok.isNotEmpty) {
+        _tambahKeKeranjang(cocok.first);
+      } else {
+        tidakKetemu.add(nama);
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _resepTerverifikasiId = (r['id'] as num).toInt();
+      _resep = {
+        'nomor_resep': (r['nomor_resep'] as String?) ?? '-',
+        'nama_dokter': (r['nama_dokter'] as String?) ?? '-',
+        'nama_pasien': (r['nama_pasien'] as String?) ?? '-',
+        'tanggal_resep': DateTime.now().toIso8601String().substring(0, 10),
+      };
+      if (tidakKetemu.isNotEmpty) {
+        _pesanInfo =
+            'Resep ${r['nomor_resep']} dimuat. Obat belum otomatis cocok di katalog: ${tidakKetemu.join(', ')}.';
+      } else {
+        _pesanInfo =
+            'Resep ${r['nomor_resep']} dari Apoteker dimuat ke keranjang.';
+      }
+    });
+  }
+
+  Future<void> _bukaDaftarResepSiapTebus() async {
+    await _muatResepSiapTebus();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(TokenRadius.sedang)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(TokenJarak.j4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Resep Siap Tebus (${_resepSiapTebus.length})',
+                    style: TokenTipografi.seksi,
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(LucideIcons.x, size: 18),
+                  ),
+                ],
+              ),
+              const SizedBox(height: TokenJarak.j2),
+              if (_resepSiapTebus.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: TokenJarak.j5),
+                  child: Text(
+                    'Belum ada resep terverifikasi dari Apoteker yang menunggu ditebus.',
+                    textAlign: TextAlign.center,
+                    style: TokenTipografi.tabel,
+                  ),
+                )
+              else
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 380),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: _resepSiapTebus.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: TokenJarak.j2),
+                    itemBuilder: (_, i) {
+                      final r = _resepSiapTebus[i];
+                      final obat = (r['daftar_obat'] as List?) ?? const [];
+                      return Container(
+                        padding: const EdgeInsets.all(TokenJarak.j3),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: TokenGaris.pemisah),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  (r['nomor_resep'] as String?) ?? '-',
+                                  style: TokenTipografi.dasar
+                                      .copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                StatusBadge(
+                                  label: 'Terverifikasi APA',
+                                  varian: VarianStatus.success,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Pasien: ${r['nama_pasien']} · Dokter: ${r['nama_dokter']}',
+                              style: TokenTipografi.tabel,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              obat
+                                  .map((o) =>
+                                      (o as Map<String, dynamic>)['nama'])
+                                  .join(', '),
+                              style: TokenTipografi.keterangan,
+                            ),
+                            const SizedBox(height: TokenJarak.j2),
+                            TombolPos(
+                              label: 'Ambil ke Keranjang',
+                              ikon: LucideIcons.shoppingCart,
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                _pilihResepTerverifikasi(r);
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -300,12 +468,28 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
         _kunciIdempoten = const Uuid().v4();
       });
     } else if (hasil.penjualan != null) {
+      final resepId = _resepTerverifikasiId;
+      final penjualanId = hasil.penjualan!.id;
       setState(() {
         _hasilBerhasil = hasil.penjualan;
         _tertundaTerakhir = false;
         _keranjang.clear();
+        _resep = null;
+        _resepTerverifikasiId = null;
         _kunciIdempoten = const Uuid().v4();
       });
+      if (resepId != null) {
+        try {
+          final k = ref.read(klienApiProvider);
+          await k.kirim(
+            () => k.dio.post(
+              '/resep-terverifikasi/$resepId/tebus',
+              data: {'penjualan_id': penjualanId},
+            ),
+          );
+        } catch (_) {}
+      }
+      _muatResepSiapTebus();
     }
   }
 
@@ -529,6 +713,56 @@ class _LayarPenjualanState extends ConsumerState<LayarPenjualan> {
               ],
             ),
           ),
+          if (_resepSiapTebus.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                TokenJarak.j3,
+                0,
+                TokenJarak.j3,
+                TokenJarak.j2,
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: _bukaDaftarResepSiapTebus,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: TokenJarak.j3,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryTint,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        LucideIcons.fileCheck2,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: TokenJarak.j2),
+                      Expanded(
+                        child: Text(
+                          '${_resepSiapTebus.length} Resep Terverifikasi APA Siap Ditebus',
+                          style: TokenTipografi.tabel.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        LucideIcons.chevronRight,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           if (_pesanInfo != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: TokenJarak.j3),

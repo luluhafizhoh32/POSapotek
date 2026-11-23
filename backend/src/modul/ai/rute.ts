@@ -1,8 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { withApotek } from '../../db/withApotek.js';
+import { catatAudit } from '../../lib/audit.js';
 import { autentikasi, izinkanPeran } from '../../lib/authMiddleware.js';
+import { GalatAplikasi } from '../../lib/galat.js';
 import { Jam } from '../../lib/jam.js';
+import { buatNomorDokumen } from '../../lib/nomor.js';
 import { validasiZod } from '../../lib/validasi.js';
 
 interface AturanInteraksi {
@@ -449,6 +452,224 @@ PERTANYAAN (${u.peran}): ${pertanyaan}`;
           fakta,
         },
       });
+    },
+  );
+
+  // 4. Resep Terverifikasi Apoteker -> Antrean Siap Tebus di Kasir POS
+  const skemaVerifikasiResep = z.object({
+    nomor_resep: z.string().trim().max(60).optional(),
+    nama_dokter: z.string().trim().min(1).max(160),
+    nama_pasien: z.string().trim().min(1).max(160),
+    daftar_obat: z
+      .array(
+        z.object({
+          nama: z.string().trim().min(1).max(200),
+          dosis: z.string().trim().max(160).optional().default('Sesuai anjuran dokter'),
+          jumlah: z.string().trim().max(60).optional().default('1'),
+        }),
+      )
+      .min(1)
+      .max(30),
+    peringatan_ai: z.array(z.record(z.unknown())).optional().default([]),
+    catatan_klinis: z.string().trim().max(1000).optional().nullable(),
+  });
+
+  const skemaDaftarResepQuery = z.object({
+    status: z.enum(['siap_ditebus', 'ditebus', 'batal']).optional(),
+  });
+
+  const skemaIdResepParam = z.object({ id: z.coerce.number().int().positive() });
+
+  const skemaTebusResep = z
+    .object({
+      penjualan_id: z.number().int().positive().optional().nullable(),
+    })
+    .optional();
+
+  app.post(
+    '/resep-terverifikasi',
+    { preHandler: [autentikasi, izinkanPeran(['apa', 'pemilik'])] },
+    async (request, reply) => {
+      const body = validasiZod(skemaVerifikasiResep, request.body);
+      const u = request.pengguna!;
+      const hariIni = Jam.hariIniWib();
+      const waktuIso = Jam.sekarang().toISO()!;
+
+      const data = await withApotek(u.apotekId, async (client) => {
+        const nomorResep =
+          body.nomor_resep && body.nomor_resep.length > 0
+            ? body.nomor_resep
+            : await buatNomorDokumen(client, u.apotekId, 'RSP', hariIni);
+
+        const ins = await client.query<{
+          id: string;
+          nomor_resep: string;
+          nama_dokter: string;
+          nama_pasien: string;
+          daftar_obat: unknown;
+          peringatan_ai: unknown;
+          catatan_klinis: string | null;
+          status: string;
+          diverifikasi_pada: Date;
+        }>(
+          `INSERT INTO resep_terverifikasi
+            (apotek_id, nomor_resep, nama_dokter, nama_pasien, daftar_obat, peringatan_ai, catatan_klinis, status, diverifikasi_oleh, diverifikasi_pada)
+           VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, 'siap_ditebus', $8, $9)
+           RETURNING id, nomor_resep, nama_dokter, nama_pasien, daftar_obat, peringatan_ai, catatan_klinis, status, diverifikasi_pada`,
+          [
+            u.apotekId,
+            nomorResep,
+            body.nama_dokter,
+            body.nama_pasien,
+            JSON.stringify(body.daftar_obat),
+            JSON.stringify(body.peringatan_ai),
+            body.catatan_klinis ?? null,
+            u.id,
+            waktuIso,
+          ],
+        );
+
+        const row = ins.rows[0]!;
+        await catatAudit(client, {
+          apotekId: u.apotekId,
+          penggunaId: u.id,
+          aksi: 'resep.verifikasi',
+          entitas: 'resep_terverifikasi',
+          entitasId: Number(row.id),
+          hasil: 'berhasil',
+          detail: {
+            nomor_resep: row.nomor_resep,
+            nama_dokter: row.nama_dokter,
+            nama_pasien: row.nama_pasien,
+            jumlah_obat: body.daftar_obat.length,
+          },
+        });
+
+        return {
+          id: Number(row.id),
+          nomor_resep: row.nomor_resep,
+          nama_dokter: row.nama_dokter,
+          nama_pasien: row.nama_pasien,
+          daftar_obat: row.daftar_obat,
+          peringatan_ai: row.peringatan_ai,
+          catatan_klinis: row.catatan_klinis,
+          status: row.status,
+          diverifikasi_pada: Jam.keIsoWib(row.diverifikasi_pada),
+        };
+      });
+
+      return reply.status(201).send({ data });
+    },
+  );
+
+  app.get(
+    '/resep-terverifikasi',
+    { preHandler: [autentikasi, izinkanPeran(['apa', 'kasir', 'pemilik'])] },
+    async (request, reply) => {
+      const query = validasiZod(skemaDaftarResepQuery, request.query);
+      const u = request.pengguna!;
+
+      const data = await withApotek(u.apotekId, async (client) => {
+        const params: unknown[] = [];
+        const whereSql = query.status
+          ? (params.push(query.status), `WHERE r.status = $${params.length}`)
+          : '';
+        const res = await client.query<{
+          id: string;
+          nomor_resep: string;
+          nama_dokter: string;
+          nama_pasien: string;
+          daftar_obat: unknown;
+          peringatan_ai: unknown;
+          catatan_klinis: string | null;
+          status: string;
+          nama_apoteker: string;
+          diverifikasi_pada: Date;
+          penjualan_id: string | null;
+          ditebus_pada: Date | null;
+        }>(
+          `SELECT r.id, r.nomor_resep, r.nama_dokter, r.nama_pasien, r.daftar_obat,
+                  r.peringatan_ai, r.catatan_klinis, r.status,
+                  p.nama_lengkap AS nama_apoteker, r.diverifikasi_pada,
+                  r.penjualan_id, r.ditebus_pada
+           FROM resep_terverifikasi r
+           JOIN pengguna p ON p.id = r.diverifikasi_oleh
+           ${whereSql}
+           ORDER BY r.diverifikasi_pada DESC, r.id DESC
+           LIMIT 50`,
+          params,
+        );
+
+        return res.rows.map((r) => ({
+          id: Number(r.id),
+          nomor_resep: r.nomor_resep,
+          nama_dokter: r.nama_dokter,
+          nama_pasien: r.nama_pasien,
+          daftar_obat: r.daftar_obat,
+          peringatan_ai: r.peringatan_ai,
+          catatan_klinis: r.catatan_klinis,
+          status: r.status,
+          nama_apoteker: r.nama_apoteker,
+          diverifikasi_pada: Jam.keIsoWib(r.diverifikasi_pada),
+          penjualan_id: r.penjualan_id ? Number(r.penjualan_id) : null,
+          ditebus_pada: r.ditebus_pada ? Jam.keIsoWib(r.ditebus_pada) : null,
+        }));
+      });
+
+      return reply.status(200).send({ data });
+    },
+  );
+
+  app.post(
+    '/resep-terverifikasi/:id/tebus',
+    { preHandler: [autentikasi, izinkanPeran(['kasir', 'apa', 'pemilik'])] },
+    async (request, reply) => {
+      const { id } = validasiZod(skemaIdResepParam, request.params);
+      const body = validasiZod(skemaTebusResep, request.body ?? {});
+      const u = request.pengguna!;
+      const waktuIso = Jam.sekarang().toISO()!;
+
+      const data = await withApotek(u.apotekId, async (client) => {
+        const cur = await client.query<{ id: string; nomor_resep: string; status: string }>(
+          `SELECT id, nomor_resep, status FROM resep_terverifikasi WHERE id = $1 FOR UPDATE`,
+          [id],
+        );
+        const row = cur.rows[0];
+        if (!row) throw new GalatAplikasi('TIDAK_DITEMUKAN');
+        if (row.status !== 'siap_ditebus') {
+          throw new GalatAplikasi('STATUS_TIDAK_VALID');
+        }
+
+        await client.query(
+          `UPDATE resep_terverifikasi
+           SET status = 'ditebus', penjualan_id = $1, ditebus_pada = $2
+           WHERE id = $3`,
+          [body?.penjualan_id ?? null, waktuIso, id],
+        );
+
+        await catatAudit(client, {
+          apotekId: u.apotekId,
+          penggunaId: u.id,
+          aksi: 'resep.tebus',
+          entitas: 'resep_terverifikasi',
+          entitasId: id,
+          hasil: 'berhasil',
+          detail: {
+            nomor_resep: row.nomor_resep,
+            penjualan_id: body?.penjualan_id ?? null,
+          },
+        });
+
+        return {
+          id,
+          nomor_resep: row.nomor_resep,
+          status: 'ditebus',
+          penjualan_id: body?.penjualan_id ?? null,
+          ditebus_pada: Jam.keIsoWib(Jam.sekarang()),
+        };
+      });
+
+      return reply.status(200).send({ data });
     },
   );
 }

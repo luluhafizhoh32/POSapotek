@@ -1,7 +1,7 @@
 import type pg from 'pg';
 import { Jam } from './jam.js';
 
-export type KodeDokumen = 'PJ' | 'PB' | 'OP' | 'PP' | 'JU' | 'SP';
+export type KodeDokumen = 'PJ' | 'PB' | 'OP' | 'PP' | 'JU' | 'SP' | 'RSP';
 
 /**
  * Membangkitkan nomor dokumen berformat KODE-YYYYMM-NNNNN di dalam transaksi yang sama.
