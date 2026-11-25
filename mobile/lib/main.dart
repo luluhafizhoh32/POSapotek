@@ -41,7 +41,7 @@ class _PosApotekAppState extends ConsumerState<PosApotekApp> {
       darkTheme: bangunTemaGelapPos(),
       themeMode: ThemeMode.light,
       locale: const Locale('id', 'ID'),
-      supportedLocales: const [Locale('id', 'ID')],
+      supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
       localizationsDelegates: const [
         mui.GlobalMaterialLocalizations.delegate,
         fl.GlobalWidgetsLocalizations.delegate,
