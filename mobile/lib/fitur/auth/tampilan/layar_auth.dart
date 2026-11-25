@@ -5,6 +5,7 @@ import '../../../app/komponen.dart';
 import '../../../app/token.dart';
 import '../../../inti/format.dart';
 import '../../../inti/galat.dart';
+import '../../../inti/klien_api.dart';
 import '../data/auth_repositori.dart';
 
 class LayarMasuk extends ConsumerStatefulWidget {
@@ -26,6 +27,54 @@ class _LayarMasukState extends ConsumerState<LayarMasuk> {
     _usernameCtrl.dispose();
     _sandiCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _aturServerDialog() async {
+    final k = ref.read(klienApiProvider);
+    final ctrl = TextEditingController(text: k.dio.options.baseUrl);
+    final baru = await tampilkanDialogPos<String>(
+      context: context,
+      judul: 'Alamat Server Backend',
+      isi: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Masukkan URL backend (akhiri dengan /api/v1):',
+            style: TokenTipografi.keterangan,
+          ),
+          const SizedBox(height: TokenJarak.j2),
+          IsianTeksPos(
+            controller: ctrl,
+            label: 'URL Server',
+            placeholder: 'http://172.20.10.3:3000/api/v1',
+          ),
+        ],
+      ),
+      tombol: [
+        TombolPos(
+          label: 'Batal',
+          jenis: JenisTombol.sekunder,
+          penuh: false,
+          onPressed: () => Navigator.pop(context),
+        ),
+        TombolPos(
+          label: 'Simpan',
+          penuh: false,
+          onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+        ),
+      ],
+    );
+    if (baru != null && baru.isNotEmpty && mounted) {
+      var url = baru;
+      if (!url.endsWith('/api/v1')) {
+        url = '${url.replaceAll(RegExp(r'/+$'), '')}/api/v1';
+      }
+      setState(() {
+        k.dio.options.baseUrl = url;
+        _pesanGalat = null;
+      });
+    }
   }
 
   Future<void> _masuk() async {
@@ -234,6 +283,22 @@ class _LayarMasukState extends ConsumerState<LayarMasuk> {
                             style: TokenTipografi.keterangan,
                           ),
                         ],
+                      ),
+                      const SizedBox(height: TokenJarak.j2),
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _aturServerDialog,
+                          icon: const Icon(LucideIcons.server, size: 14),
+                          label: Text(
+                            'Server: ${ref.watch(klienApiProvider).dio.options.baseUrl}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TokenTipografi.keterangan.copyWith(
+                              color: TokenAksi.utama,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
